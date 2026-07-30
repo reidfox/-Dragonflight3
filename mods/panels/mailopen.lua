@@ -48,7 +48,6 @@ DF:NewModule('mailopen', 1, function()
         OpenMailFrame:SetBackdrop(nil)
     end, true)
 
-    tinsert(UISpecialFrames, 'DF_OpenMailCustomBg')
 
     local callbacks = {}
     DF:NewCallbacks('mailopen', callbacks)

@@ -51,7 +51,6 @@ DF:NewModule('merchantframe', 1, function()
         MerchantFrame:SetBackdrop(nil)
     end, true)
 
-    tinsert(UISpecialFrames, 'DF_MerchantCustomBg')
 
     local merchantCloseFrame = CreateFrame('Frame')
     merchantCloseFrame:RegisterEvent('MERCHANT_CLOSED')

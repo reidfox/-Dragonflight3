@@ -67,7 +67,6 @@ DF:NewModule('gossipframe', 1, function()
         GossipFrame:SetBackdrop(nil)
     end, true)
 
-    tinsert(UISpecialFrames, 'DF_GossipCustomBg')
 
     local callbacks = {}
     DF:NewCallbacks('gossipframe', callbacks)

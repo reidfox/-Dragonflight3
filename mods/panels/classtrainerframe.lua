@@ -91,7 +91,6 @@ DF:NewModule('classtrainerframe', 1, function()
             ClassTrainerFrame:SetBackdrop(nil)
         end, true)
 
-        tinsert(UISpecialFrames, 'DF_ClassTrainerCustomBg')
     end
 
     local frame = CreateFrame('Frame')

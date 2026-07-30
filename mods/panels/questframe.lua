@@ -63,7 +63,6 @@ DF:NewModule('questframe', 1, function()
         QuestFrame:SetBackdrop(nil)
     end, true)
 
-    tinsert(UISpecialFrames, 'DF_QuestCustomBg')
 
     local callbacks = {}
     DF:NewCallbacks('questframe', callbacks)

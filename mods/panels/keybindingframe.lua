@@ -47,7 +47,6 @@ DF:NewModule('keybinds', 1, function()
             frame:SetBackdrop(nil)
         end, true)
 
-        tinsert(UISpecialFrames, 'DF_KeyBindingCustomBg')
     end
 
     local frame = CreateFrame('Frame')

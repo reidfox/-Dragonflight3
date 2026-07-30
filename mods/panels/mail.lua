@@ -55,7 +55,6 @@ DF:NewModule('mail', 1, function()
         MailFrame:SetBackdrop(nil)
     end, true)
 
-    tinsert(UISpecialFrames, 'DF_MailCustomBg')
 
     local callbacks = {}
     DF:NewCallbacks('mail', callbacks)

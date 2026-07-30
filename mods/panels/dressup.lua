@@ -41,7 +41,6 @@ DF:NewModule('dressup', 1, function()
         DressUpFrame:SetBackdrop(nil)
     end, true)
 
-    tinsert(UISpecialFrames, 'DF_DressUpCustomBg')
 
     local callbacks = {}
     DF:NewCallbacks('dressup', callbacks)

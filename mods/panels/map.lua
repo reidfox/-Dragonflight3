@@ -46,7 +46,6 @@ DF:NewModule('map', 1, 'PLAYER_ENTERING_WORLD',function()
         WorldMapFrame:SetBackdrop(nil)
     end, true)
 
-    tinsert(UISpecialFrames, 'DF_MapCustomBg')
 
     WorldMapFrame:ClearAllPoints()
     WorldMapFrame:SetPoint('CENTER', UIParent, 'CENTER', 0, 0)
@@ -68,6 +67,9 @@ DF:NewModule('map', 1, 'PLAYER_ENTERING_WORLD',function()
     end)
 
     BlackoutWorld:Hide()
+    DF.hooks.HookScript(BlackoutWorld, 'OnShow', function()
+        BlackoutWorld:Hide()
+    end, true)
 
     DF.mixins.HideMinimizeMaximizeButton()
 

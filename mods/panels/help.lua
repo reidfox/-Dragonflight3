@@ -43,7 +43,6 @@ DF:NewModule('help', 1, function()
         HelpFrame:SetBackdrop(nil)
     end, true)
 
-    tinsert(UISpecialFrames, 'DF_HelpCustomBg')
 
     -- callbacks
     local callbacks = {}

@@ -79,7 +79,6 @@ DF:NewModule('macros', 1, function()
             end
         end
 
-        tinsert(UISpecialFrames, 'DF_MacroCustomBg')
     end
 
     local frame = CreateFrame('Frame')
