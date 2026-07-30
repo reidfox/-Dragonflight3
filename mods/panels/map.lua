@@ -42,6 +42,10 @@ DF:NewModule('map', 1, 'PLAYER_ENTERING_WORLD',function()
     closeButton:SetSize(20, 20)
     closeButton:SetFrameLevel(customBg:GetFrameLevel() + 3)
 
+    if DF.others.server == 'turtle' and WORLDMAP_WINDOWED == 1 and WorldMapFrame_Maximize then
+        WorldMapFrame_Maximize()
+    end
+
     local function ApplyMapLayout()
         WorldMapFrame:SetBackdrop(nil)
         WorldMapFrame:SetScale(DF.profile.UIParent.worldmapScale or 0.7)
@@ -50,23 +54,11 @@ DF:NewModule('map', 1, 'PLAYER_ENTERING_WORLD',function()
         WorldMapFrame:SetSize(WorldMapButton:GetWidth() + 15, WorldMapButton:GetHeight() + 100)
         WorldMapFrame:EnableKeyboard(false)
         BlackoutWorld:Hide()
+        DF.mixins.HideMinimizeMaximizeButton()
     end
 
-    local function HookMapSizeButton(button)
-        if not button or button.dfLayoutHooked then return end
-
-        DF.hooks.HookScript(button, 'OnClick', ApplyMapLayout, true)
-        button.dfLayoutHooked = true
-    end
-
-    local function ApplyMapLayoutOnShow()
-        ApplyMapLayout()
-        HookMapSizeButton(WorldMapFrameMinimizeButton)
-        HookMapSizeButton(WorldMapFrameMaximizeButton)
-    end
-
-    ApplyMapLayoutOnShow()
-    DF.hooks.HookScript(WorldMapFrame, 'OnShow', ApplyMapLayoutOnShow, true)
+    ApplyMapLayout()
+    DF.hooks.HookScript(WorldMapFrame, 'OnShow', ApplyMapLayout, true)
 
     WorldMapFrame:SetMovable(true)
     WorldMapFrame:EnableMouse(true)
