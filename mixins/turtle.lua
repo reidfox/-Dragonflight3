@@ -6,12 +6,28 @@ function DF.mixins.HideMinimizeMaximizeButton()
     local function DisableMapSizeButton(button)
         if not button then return end
 
+        if button.SetScript then
+            button:SetScript('OnClick', nil)
+            button:SetScript('OnShow', function()
+                this:Hide()
+            end)
+        end
+        if button.Disable then
+            button:Disable()
+        end
         button:Hide()
         button.Show = function() end
     end
 
     DisableMapSizeButton(WorldMapFrameMinimizeButton)
     DisableMapSizeButton(WorldMapFrameMaximizeButton)
+
+    if WorldMap_ToggleSizeDown then
+        _G.WorldMap_ToggleSizeDown = function() end
+    end
+    if WorldMap_ToggleSizeUp then
+        _G.WorldMap_ToggleSizeUp = function() end
+    end
 end
 
 function DF.mixins.IsCollectorException(buttonName)

@@ -42,19 +42,21 @@ DF:NewModule('map', 1, 'PLAYER_ENTERING_WORLD',function()
     closeButton:SetSize(20, 20)
     closeButton:SetFrameLevel(customBg:GetFrameLevel() + 3)
 
-    DF.hooks.HookScript(WorldMapFrame, 'OnShow', function()
+    local mapWidth = WorldMapButton:GetWidth() + 15
+    local mapHeight = WorldMapButton:GetHeight() + 100
+    local function ApplyFixedMapLayout()
         WorldMapFrame:SetBackdrop(nil)
-    end, true)
-
-
-    WorldMapFrame:ClearAllPoints()
-    WorldMapFrame:SetPoint('CENTER', UIParent, 'CENTER', 0, 0)
-    WorldMapFrame:SetSize(WorldMapButton:GetWidth() + 15, WorldMapButton:GetHeight() + 100)
-
-    DF.hooks.HookScript(WorldMapFrame, 'OnShow', function()
         WorldMapFrame:SetScale(DF.profile.UIParent.worldmapScale or 0.7)
-        this:EnableKeyboard(false)
-    end, true)
+        WorldMapFrame:ClearAllPoints()
+        WorldMapFrame:SetPoint('CENTER', UIParent, 'CENTER', 0, 0)
+        WorldMapFrame:SetSize(mapWidth, mapHeight)
+        WorldMapFrame:EnableKeyboard(false)
+        BlackoutWorld:Hide()
+        DF.mixins.HideMinimizeMaximizeButton()
+    end
+
+    ApplyFixedMapLayout()
+    DF.hooks.HookScript(WorldMapFrame, 'OnShow', ApplyFixedMapLayout, true)
 
     WorldMapFrame:SetMovable(true)
     WorldMapFrame:EnableMouse(true)
@@ -66,12 +68,9 @@ DF:NewModule('map', 1, 'PLAYER_ENTERING_WORLD',function()
         WorldMapFrame:StopMovingOrSizing()
     end)
 
-    BlackoutWorld:Hide()
     DF.hooks.HookScript(BlackoutWorld, 'OnShow', function()
         BlackoutWorld:Hide()
     end, true)
-
-    DF.mixins.HideMinimizeMaximizeButton()
 
     WorldMapZoneDropDown:ClearAllPoints()
     WorldMapZoneDropDown:SetPoint('LEFT', WorldMapContinentDropDown, 'RIGHT', 20, 0)
