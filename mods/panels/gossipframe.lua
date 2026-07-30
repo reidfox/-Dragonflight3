@@ -63,6 +63,10 @@ DF:NewModule('gossipframe', 1, function()
         GossipFrameNpcNameText:SetPoint('TOP', customBg, 'TOP', 0, -6)
     end
 
+    DF.hooks.HookScript(GossipFrame, 'OnShow', function()
+        GossipFrame:SetBackdrop(nil)
+    end, true)
+
     tinsert(UISpecialFrames, 'DF_GossipCustomBg')
 
     local callbacks = {}

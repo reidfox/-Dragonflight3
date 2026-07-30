@@ -51,6 +51,10 @@ DF:NewModule('mail', 1, function()
         MailFrameTab_OnClick(2)
     end, 75)
 
+    DF.hooks.HookScript(MailFrame, 'OnShow', function()
+        MailFrame:SetBackdrop(nil)
+    end, true)
+
     tinsert(UISpecialFrames, 'DF_MailCustomBg')
 
     local callbacks = {}

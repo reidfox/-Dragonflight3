@@ -33,6 +33,7 @@ DF:NewModule('characterframe', 1,'PLAYER_ENTERING_WORLD',function()
     CharacterFrameTab4:Hide()
     CharacterFrameTab5:Hide()
     CharacterFrameCloseButton:Hide()
+    CharacterFrame:SetBackdrop(nil)
 
     _G.PetTab_Update = function() end
 
@@ -153,6 +154,10 @@ DF:NewModule('characterframe', 1,'PLAYER_ENTERING_WORLD',function()
         end
         DF.hooks.registry[_G]['PaperDollItemSlotButton_OnClick'](button, ignoreModifiers)
     end)
+
+    DF.hooks.HookScript(CharacterFrame, 'OnShow', function()
+        CharacterFrame:SetBackdrop(nil)
+    end, true)
 
     local slots = {'Head', 'Neck', 'Shoulder', 'Shirt', 'Chest', 'Waist', 'Legs', 'Feet', 'Wrist', 'Hands', 'Finger0', 'Finger1', 'Trinket0', 'Trinket1', 'Back', 'MainHand', 'SecondaryHand', 'Ranged', 'Tabard', 'Ammo'}
     local slotButtons = {}

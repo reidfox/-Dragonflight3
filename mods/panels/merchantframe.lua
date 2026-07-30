@@ -47,6 +47,10 @@ DF:NewModule('merchantframe', 1, function()
         MerchantFrame_Update()
     end, 70)
 
+    DF.hooks.HookScript(MerchantFrame, 'OnShow', function()
+        MerchantFrame:SetBackdrop(nil)
+    end, true)
+
     tinsert(UISpecialFrames, 'DF_MerchantCustomBg')
 
     local merchantCloseFrame = CreateFrame('Frame')

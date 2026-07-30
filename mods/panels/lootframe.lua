@@ -61,6 +61,7 @@ DF:NewModule('lootframe', 1, function()
     tinsert(UISpecialFrames, 'DF_LootCustomBg')
 
     DF.hooks.HookScript(LootFrame, 'OnShow', function()
+        LootFrame:SetBackdrop(nil)
         LootFrame:ClearAllPoints()
         if DF.profile.lootframe.positionAtMouse then
             local x, y = GetCursorPosition()

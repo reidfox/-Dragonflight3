@@ -87,6 +87,10 @@ DF:NewModule('classtrainerframe', 1, function()
         closeButton:SetSize(20, 20)
         closeButton:SetFrameLevel(customBg:GetFrameLevel() + 3)
 
+        DF.hooks.HookScript(ClassTrainerFrame, 'OnShow', function()
+            ClassTrainerFrame:SetBackdrop(nil)
+        end, true)
+
         tinsert(UISpecialFrames, 'DF_ClassTrainerCustomBg')
     end
 

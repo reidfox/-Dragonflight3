@@ -16,6 +16,7 @@ DF:NewModule('help', 1, function()
 
     HelpFrameHeader:Hide()
     HelpFrameCloseButton:Hide()
+    HelpFrame:SetBackdrop(nil)
 
     local customBg = DF.ui.CreatePaperDollFrame('DF_HelpCustomBg', HelpFrame, 640, 512, 2)
     customBg:SetPoint('TOPLEFT', HelpFrame, 'TOPLEFT', 0, 0)
@@ -37,6 +38,10 @@ DF:NewModule('help', 1, function()
     closeButton:SetPoint('TOPRIGHT', customBg, 'TOPRIGHT', 0, -1)
     closeButton:SetSize(20, 20)
     closeButton:SetFrameLevel(customBg:GetFrameLevel() + 3)
+
+    DF.hooks.HookScript(HelpFrame, 'OnShow', function()
+        HelpFrame:SetBackdrop(nil)
+    end, true)
 
     tinsert(UISpecialFrames, 'DF_HelpCustomBg')
 

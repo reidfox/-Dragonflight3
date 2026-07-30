@@ -47,6 +47,10 @@ DF:NewModule('macros', 1, function()
         closeButton:SetSize(20, 20)
         closeButton:SetFrameLevel(customBg:GetFrameLevel() + 3)
 
+        DF.hooks.HookScript(MacroFrame, 'OnShow', function()
+            MacroFrame:SetBackdrop(nil)
+        end, true)
+
         for i = 1, 18 do
             local button = getglobal('MacroButton' .. i)
             if button then

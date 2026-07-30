@@ -16,6 +16,7 @@ DF:NewModule('socialframe', 1, 'PLAYER_ENTERING_WORLD', function()
     FriendsFrameTab3:Hide()
     FriendsFrameTab4:Hide()
     FriendsFrameCloseButton:Hide()
+    FriendsFrame:SetBackdrop(nil)
 
     local customBg = DF.ui.CreatePaperDollFrame('DF_FriendsCustomBg', FriendsFrame, 384, 512, 1)
     customBg:SetPoint('TOPLEFT', FriendsFrame, 'TOPLEFT', 12, -12)
@@ -115,6 +116,10 @@ DF:NewModule('socialframe', 1, 'PLAYER_ENTERING_WORLD', function()
         PanelTemplates_SetTab(FriendsFrame, 4)
         FriendsFrame_Update()
     end, 60)
+
+    DF.hooks.HookScript(FriendsFrame, 'OnShow', function()
+        FriendsFrame:SetBackdrop(nil)
+    end, true)
 
     tinsert(UISpecialFrames, 'DF_FriendsCustomBg')
 

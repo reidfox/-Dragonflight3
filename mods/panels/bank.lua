@@ -82,6 +82,10 @@ DF:NewModule('bank', 1, 'PLAYER_ENTERING_WORLD', function()
     closeButton:SetSize(20, 20)
     closeButton:SetFrameLevel(customBg:GetFrameLevel() + 3)
 
+    DF.hooks.HookScript(BankFrame, 'OnShow', function()
+        BankFrame:SetBackdrop(nil)
+    end, true)
+
     local callbacks = {}
     DF:NewCallbacks('bank', callbacks)
 end)

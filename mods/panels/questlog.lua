@@ -17,6 +17,7 @@ DF:NewModule('questlog', 1, function()
         end
     end
     QuestLogFrameCloseButton:Hide()
+    QuestLogFrame:SetBackdrop(nil)
 
     local customBg = DF.ui.CreatePaperDollFrame('DF_QuestLogCustomBg', QuestLogFrame, 384, 400, 1)
     customBg:SetPoint('TOPLEFT', QuestLogFrame, 'TOPLEFT', 12, -12)
@@ -63,6 +64,10 @@ DF:NewModule('questlog', 1, function()
     closeButton:SetPoint('TOPRIGHT', customBg, 'TOPRIGHT', 0, -1)
     closeButton:SetSize(20, 20)
     closeButton:SetFrameLevel(customBg:GetFrameLevel() + 3)
+
+    DF.hooks.HookScript(QuestLogFrame, 'OnShow', function()
+        QuestLogFrame:SetBackdrop(nil)
+    end, true)
 
     for i = 1, 10 do
         local item = getglobal('QuestLogItem' .. i)

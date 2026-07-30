@@ -63,6 +63,10 @@ DF:NewModule('trade', 1, function()
     recipientMoneyBg:SetBackdropColor(0, 0, 0, 0.5)
     recipientMoneyBg:SetBackdropBorderColor(0.5, 0.5, 0.5, 1)
 
+    DF.hooks.HookScript(TradeFrame, 'OnShow', function()
+        TradeFrame:SetBackdrop(nil)
+    end, true)
+
     -- callbacks
     local callbacks = {}
 

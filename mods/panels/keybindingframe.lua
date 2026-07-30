@@ -43,6 +43,10 @@ DF:NewModule('keybinds', 1, function()
         closeButton:SetSize(20, 20)
         closeButton:SetFrameLevel(customBg:GetFrameLevel() + 3)
 
+        DF.hooks.HookScript(frame, 'OnShow', function()
+            frame:SetBackdrop(nil)
+        end, true)
+
         tinsert(UISpecialFrames, 'DF_KeyBindingCustomBg')
     end
 

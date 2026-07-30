@@ -59,6 +59,10 @@ DF:NewModule('questframe', 1, function()
         QuestFrameCompleteQuestButton:SetPoint('BOTTOMLEFT', customBg, 'BOTTOMLEFT', 4, 3)
     end
 
+    DF.hooks.HookScript(QuestFrame, 'OnShow', function()
+        QuestFrame:SetBackdrop(nil)
+    end, true)
+
     tinsert(UISpecialFrames, 'DF_QuestCustomBg')
 
     local callbacks = {}

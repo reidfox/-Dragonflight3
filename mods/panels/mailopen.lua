@@ -44,6 +44,10 @@ DF:NewModule('mailopen', 1, function()
     closeButton:SetSize(20, 20)
     closeButton:SetFrameLevel(customBg:GetFrameLevel() + 3)
 
+    DF.hooks.HookScript(OpenMailFrame, 'OnShow', function()
+        OpenMailFrame:SetBackdrop(nil)
+    end, true)
+
     tinsert(UISpecialFrames, 'DF_OpenMailCustomBg')
 
     local callbacks = {}

@@ -35,7 +35,11 @@ function DF.common.KillFrame(frame)
     end
 
     if frame.SetAlpha then
-        frame:SetAlpha(0)
+        frame:SetAlpha(1)
+    end
+
+    if frame.Show then
+        frame.Show = function() end
     end
 
     if frame.EnableMouse then
@@ -108,4 +112,3 @@ function DF.common.CreateGoldString(money)
     string = string .. '|cffffffff ' .. copper .. '|cffeda55fc'
     return string
 end
-
