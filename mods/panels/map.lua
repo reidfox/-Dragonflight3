@@ -42,21 +42,31 @@ DF:NewModule('map', 1, 'PLAYER_ENTERING_WORLD',function()
     closeButton:SetSize(20, 20)
     closeButton:SetFrameLevel(customBg:GetFrameLevel() + 3)
 
-    local mapWidth = WorldMapButton:GetWidth() + 15
-    local mapHeight = WorldMapButton:GetHeight() + 100
-    local function ApplyFixedMapLayout()
+    local function ApplyMapLayout()
         WorldMapFrame:SetBackdrop(nil)
         WorldMapFrame:SetScale(DF.profile.UIParent.worldmapScale or 0.7)
         WorldMapFrame:ClearAllPoints()
         WorldMapFrame:SetPoint('CENTER', UIParent, 'CENTER', 0, 0)
-        WorldMapFrame:SetSize(mapWidth, mapHeight)
+        WorldMapFrame:SetSize(WorldMapButton:GetWidth() + 15, WorldMapButton:GetHeight() + 100)
         WorldMapFrame:EnableKeyboard(false)
         BlackoutWorld:Hide()
-        DF.mixins.HideMinimizeMaximizeButton()
     end
 
-    ApplyFixedMapLayout()
-    DF.hooks.HookScript(WorldMapFrame, 'OnShow', ApplyFixedMapLayout, true)
+    local function HookMapSizeButton(button)
+        if not button or button.dfLayoutHooked then return end
+
+        DF.hooks.HookScript(button, 'OnClick', ApplyMapLayout, true)
+        button.dfLayoutHooked = true
+    end
+
+    local function ApplyMapLayoutOnShow()
+        ApplyMapLayout()
+        HookMapSizeButton(WorldMapFrameMinimizeButton)
+        HookMapSizeButton(WorldMapFrameMaximizeButton)
+    end
+
+    ApplyMapLayoutOnShow()
+    DF.hooks.HookScript(WorldMapFrame, 'OnShow', ApplyMapLayoutOnShow, true)
 
     WorldMapFrame:SetMovable(true)
     WorldMapFrame:EnableMouse(true)

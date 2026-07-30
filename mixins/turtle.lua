@@ -3,30 +3,11 @@ DRAGONFLIGHT()
 function DF.mixins.HideMinimizeMaximizeButton()
     if DF.others.server ~= 'turtle' then return end
 
-    local function DisableMapSizeButton(button)
-        if not button then return end
-
-        if button.SetScript then
-            button:SetScript('OnClick', nil)
-            button:SetScript('OnShow', function()
-                this:Hide()
-            end)
-        end
-        if button.Disable then
-            button:Disable()
-        end
-        button:Hide()
-        button.Show = function() end
+    if WorldMapFrameMinimizeButton then
+        WorldMapFrameMinimizeButton:Hide()
     end
-
-    DisableMapSizeButton(WorldMapFrameMinimizeButton)
-    DisableMapSizeButton(WorldMapFrameMaximizeButton)
-
-    if WorldMap_ToggleSizeDown then
-        _G.WorldMap_ToggleSizeDown = function() end
-    end
-    if WorldMap_ToggleSizeUp then
-        _G.WorldMap_ToggleSizeUp = function() end
+    if WorldMapFrameMaximizeButton then
+        WorldMapFrameMaximizeButton:Hide()
     end
 end
 
