@@ -268,6 +268,17 @@ DF:NewModule('actionbars', 1, 'PLAYER_LOGIN', function()
     setup.pagingContainer:SetPoint('RIGHT', setup.mainBar, 'LEFT', -10, 0)
     -- setup.pagingContainer:Hide()
 
+    -- Blizzard's previous/next action-page bindings call these globals.
+    -- The stock bar they normally page was removed above, so route them
+    -- through Dragonflight's replacement paging system instead.
+    function _G.ActionBar_PageUp()
+        setup:UpdatePage(1)
+    end
+
+    function _G.ActionBar_PageDown()
+        setup:UpdatePage(-1)
+    end
+
     setup:CreateKeyboardRouting( -- TODO add petbar/stancebar ec.
         setup.mainBar.buttons,
         {setup.multiBars[1].buttons, setup.multiBars[2].buttons, setup.multiBars[3].buttons, setup.multiBars[4].buttons},
