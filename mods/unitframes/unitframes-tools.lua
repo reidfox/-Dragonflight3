@@ -443,7 +443,9 @@ function setup:SetSimplePowerBarOffset(unitFrame, enabled)
     local anchor = bar.simpleBasePoint
     bar:SetHeight(bar.simpleBaseHeight - (enabled and 1 or 0))
     bar:ClearAllPoints()
-    bar:SetPoint(anchor[1], anchor[2], anchor[3], anchor[4], anchor[5] + 2)
+    -- The source power-bar artwork has transparent padding above its visible
+    -- edge, so four anchor pixels produce roughly a two-pixel visual lift.
+    bar:SetPoint(anchor[1], anchor[2], anchor[3], anchor[4], anchor[5] + 4)
 end
 
 function setup:SetSimpleTargetTargetNameOffset(unitFrame, enabled)
