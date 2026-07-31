@@ -48,4 +48,15 @@ DF:NewModule('unitframes', 1, 'PLAYER_LOGIN', function()
 
     local callbacks = setup:GenerateCallbacks()
     DF:NewCallbacks('unitframes', callbacks)
+
+    -- Texture callbacks are normally change-driven. Reapply saved selections
+    -- once at login so Simple Style's wrapper, crop and offsets do not require
+    -- toggling the dropdown off and back on after a reload.
+    local textureFrames = {'player', 'target', 'targettarget', 'pet', 'pettarget', 'party'}
+    for i = 1, table.getn(textureFrames) do
+        local key = textureFrames[i]
+        callbacks[key..'HealthBarTexture'](DF.profile['unitframes'][key..'HealthBarTexture'])
+        callbacks[key..'ManaBarTexture'](DF.profile['unitframes'][key..'ManaBarTexture'])
+        callbacks[key..'PortraitBorderTexture'](DF.profile['unitframes'][key..'PortraitBorderTexture'])
+    end
 end)

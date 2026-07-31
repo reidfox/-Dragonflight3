@@ -458,7 +458,7 @@ function setup:SetSimplePowerBarOffset(unitFrame, enabled)
     end
 
     local anchor = bar.simpleBasePoint
-    bar:SetHeight(bar.simpleBaseHeight - (enabled and 1 or 0))
+    bar:SetHeight(bar.simpleBaseHeight - (enabled and 2 or 0))
     bar:ClearAllPoints()
     -- The source power-bar artwork has transparent padding above its visible
     -- edge, so four anchor pixels produce roughly a two-pixel visual lift.
@@ -774,9 +774,14 @@ function setup:UpdateUnitMana(unitFrame, instant)
 end
 
 function setup:UpdateBarText(unitFrame)
+    local profileKey = string.find(unitFrame.unit, 'party') and 'party' or unitFrame.unit
+    local unitProfile = DF_Profiles and DF.profile['unitframes']
+    local hpTextYOffset = unitProfile and unitProfile[profileKey..'HealthBarTexture'] == 'Simple Style' and 1 or 0
+    local manaTextYOffset = unitProfile and unitProfile[profileKey..'ManaBarTexture'] == 'Simple Style' and 1 or 0
+
     if UnitIsDead(unitFrame.unit) or UnitIsGhost(unitFrame.unit) then
         unitFrame.hpBar.text:ClearAllPoints()
-        unitFrame.hpBar.text:SetPoint('CENTER', unitFrame.hpBar, 'CENTER', 0, 0)
+        unitFrame.hpBar.text:SetPoint('CENTER', unitFrame.hpBar, 'CENTER', 0, hpTextYOffset)
         unitFrame.hpBar.text:SetText('Dead')
         unitFrame.hpBar.pctText:SetText('')
         unitFrame.powerBar.text:SetText('')
@@ -786,7 +791,7 @@ function setup:UpdateBarText(unitFrame)
 
     if not UnitIsConnected(unitFrame.unit) then
         unitFrame.hpBar.text:ClearAllPoints()
-        unitFrame.hpBar.text:SetPoint('CENTER', unitFrame.hpBar, 'CENTER', 0, 0)
+        unitFrame.hpBar.text:SetPoint('CENTER', unitFrame.hpBar, 'CENTER', 0, hpTextYOffset)
         unitFrame.hpBar.text:SetText('Offline')
         unitFrame.hpBar.pctText:SetText('')
         unitFrame.powerBar.text:SetText('')
@@ -853,34 +858,34 @@ function setup:UpdateBarText(unitFrame)
 
     unitFrame.hpBar.text:ClearAllPoints()
     if hpAnchor == 'center' then
-        unitFrame.hpBar.text:SetPoint('CENTER', unitFrame.hpBar, 'CENTER', 0, 0)
+        unitFrame.hpBar.text:SetPoint('CENTER', unitFrame.hpBar, 'CENTER', 0, hpTextYOffset)
     elseif hpAnchor == 'right' then
-        unitFrame.hpBar.text:SetPoint('RIGHT', unitFrame.hpBar, 'RIGHT', -3, 0)
+        unitFrame.hpBar.text:SetPoint('RIGHT', unitFrame.hpBar, 'RIGHT', -3, hpTextYOffset)
     else
-        unitFrame.hpBar.text:SetPoint('LEFT', unitFrame.hpBar, 'LEFT', 3, 0)
+        unitFrame.hpBar.text:SetPoint('LEFT', unitFrame.hpBar, 'LEFT', 3, hpTextYOffset)
     end
 
     unitFrame.hpBar.pctText:ClearAllPoints()
     if isTarget then
-        unitFrame.hpBar.pctText:SetPoint('RIGHT', unitFrame.hpBar, 'RIGHT', -3, 0)
+        unitFrame.hpBar.pctText:SetPoint('RIGHT', unitFrame.hpBar, 'RIGHT', -3, hpTextYOffset)
     else
-        unitFrame.hpBar.pctText:SetPoint('LEFT', unitFrame.hpBar, 'LEFT', 3, 0)
+        unitFrame.hpBar.pctText:SetPoint('LEFT', unitFrame.hpBar, 'LEFT', 3, hpTextYOffset)
     end
 
     unitFrame.powerBar.text:ClearAllPoints()
     if manaAnchor == 'center' then
-        unitFrame.powerBar.text:SetPoint('CENTER', unitFrame.powerBar, 'CENTER', 0, 0)
+        unitFrame.powerBar.text:SetPoint('CENTER', unitFrame.powerBar, 'CENTER', 0, manaTextYOffset)
     elseif manaAnchor == 'right' then
-        unitFrame.powerBar.text:SetPoint('RIGHT', unitFrame.powerBar, 'RIGHT', -3, 0)
+        unitFrame.powerBar.text:SetPoint('RIGHT', unitFrame.powerBar, 'RIGHT', -3, manaTextYOffset)
     else
-        unitFrame.powerBar.text:SetPoint('LEFT', unitFrame.powerBar, 'LEFT', 3, 0)
+        unitFrame.powerBar.text:SetPoint('LEFT', unitFrame.powerBar, 'LEFT', 3, manaTextYOffset)
     end
 
     unitFrame.powerBar.pctText:ClearAllPoints()
     if isTarget then
-        unitFrame.powerBar.pctText:SetPoint('RIGHT', unitFrame.powerBar, 'RIGHT', -3, 0)
+        unitFrame.powerBar.pctText:SetPoint('RIGHT', unitFrame.powerBar, 'RIGHT', -3, manaTextYOffset)
     else
-        unitFrame.powerBar.pctText:SetPoint('LEFT', unitFrame.powerBar, 'LEFT', 3, 0)
+        unitFrame.powerBar.pctText:SetPoint('LEFT', unitFrame.powerBar, 'LEFT', 3, manaTextYOffset)
     end
 end
 
@@ -2392,7 +2397,7 @@ function setup:GenerateCallbacks()
                     portrait.powerBar.simpleBaseHeight = value
                     local textureKey = string.find(portrait.unit, 'party') and 'partyManaBarTexture' or portrait.unit..'ManaBarTexture'
                     local isSimple = DF_Profiles and DF.profile['unitframes'] and DF.profile['unitframes'][textureKey] == 'Simple Style'
-                    portrait.powerBar:SetHeight(value - (isSimple and 1 or 0))
+                    portrait.powerBar:SetHeight(value - (isSimple and 2 or 0))
                     portrait.powerBar:Update()
                 end
             end
@@ -2588,6 +2593,7 @@ function setup:GenerateCallbacks()
                     portrait.hpBar:SetTextures(tex, tex)
                     setup:SetSimpleBarWrapper(portrait, portrait.hpBar, 'health', value == 'Simple Style')
                     setup:SetSimpleBarFillOffset(portrait, portrait.hpBar, 'health', value == 'Simple Style')
+                    setup:UpdateBarText(portrait)
                 end
             end
         end
@@ -2653,6 +2659,7 @@ function setup:GenerateCallbacks()
                     setup:SetSimpleBarWrapper(portrait, portrait.powerBar, 'power', value == 'Simple Style')
                     setup:SetSimplePowerBarOffset(portrait, value == 'Simple Style')
                     setup:SetSimpleBarFillOffset(portrait, portrait.powerBar, 'power', value == 'Simple Style')
+                    setup:UpdateBarText(portrait)
                 end
             end
         end
