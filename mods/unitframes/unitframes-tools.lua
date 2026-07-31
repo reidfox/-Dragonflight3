@@ -432,6 +432,18 @@ function setup:SetSimpleBarWrapper(unitFrame, bar, kind, enabled)
     wrapper:Show()
 end
 
+function setup:SetSimplePowerBarOffset(unitFrame, enabled)
+    local bar = unitFrame.powerBar
+    if not bar.simpleBasePoint then
+        local point, relativeTo, relativePoint, x, y = bar:GetPoint(1)
+        bar.simpleBasePoint = {point, relativeTo, relativePoint, x or 0, y or 0}
+    end
+
+    local anchor = bar.simpleBasePoint
+    bar:ClearAllPoints()
+    bar:SetPoint(anchor[1], anchor[2], anchor[3], anchor[4], anchor[5] + (enabled and 2 or 0))
+end
+
 function setup:GetSimpleHealthTexture(unitFrame)
     if unitFrame.unit == 'player' or unitFrame.unit == 'target' then
         return self.textures.reforgedHealth
@@ -2249,7 +2261,26 @@ function setup:GenerateCallbacks()
             for j = 1, table.getn(setup.portraits) do
                 local portrait = setup.portraits[j]
                 if (frame.key == 'party' and string.find(portrait.unit, 'party')) or portrait.unit == frame.key then
-                    portrait:SetScale(value)
+                    if portrait.unit == 'targettarget' then
+                        -- GetLeft/GetTop are expressed in the frame's current
+                        -- scale. Re-anchor in the new scale so moving the slider
+                        -- changes size without changing its on-screen position.
+                        local oldScale = portrait:GetScale()
+                        local left = portrait:GetLeft()
+                        local top = portrait:GetTop()
+                        portrait:SetScale(value)
+                        if left and top and oldScale and value > 0 then
+                            local newLeft = left * oldScale / value
+                            local newTop = top * oldScale / value
+                            portrait:ClearAllPoints()
+                            portrait:SetPoint('TOPLEFT', UIParent, 'BOTTOMLEFT', newLeft, newTop)
+                            if DF.profile['editmode'] and DF.profile['editmode']['framePositions'] then
+                                DF.profile['editmode']['framePositions'][portrait:GetName()] = {x = newLeft, y = newTop}
+                            end
+                        end
+                    else
+                        portrait:SetScale(value)
+                    end
                 end
             end
         end
@@ -2583,6 +2614,7 @@ function setup:GenerateCallbacks()
                     end
                     portrait.powerBar:SetTextures(tex, tex)
                     setup:SetSimpleBarWrapper(portrait, portrait.powerBar, 'power', value == 'Simple Style')
+                    setup:SetSimplePowerBarOffset(portrait, value == 'Simple Style')
                 end
             end
         end
