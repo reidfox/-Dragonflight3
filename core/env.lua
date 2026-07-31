@@ -11,6 +11,7 @@ local texPaths = {
     'generic',
     'bags',
     'castbar',
+    'xprep',
     'panels'
 }
 

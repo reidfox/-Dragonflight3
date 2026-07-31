@@ -3,6 +3,7 @@ DRAGONFLIGHT()
 local textures = {
     background = media['tex:castbar:CastingBarBackground.blp'],
     bar = media['tex:castbar:CastingBarStandard3.tga'],
+    reforgedBar = media['tex:castbar:CastingBarStandard3_Reforged.tga'],
     border = media['tex:castbar:CastingBarFrame.blp'],
     spark = media['tex:castbar:CastingBarSpark.blp'],
     flash = media['tex:castbar:CastingBarFrameFlash.tga'],
@@ -76,7 +77,8 @@ function DF.lib.CreateCastBar(unit)
         bar:SetPoint('LEFT', frame, 'LEFT', 0, 0)
         bar:SetHeight(self.config.height)
         bar:SetWidth(0)
-        bar:SetTexture(textures.bar)
+        local useReforgedSkin = DF.profile['gui-generator'] and DF.profile['gui-generator']['interfaceStyle'] == 'Simple Style'
+        bar:SetTexture(useReforgedSkin and textures.reforgedBar or textures.bar)
         bar:SetVertexColor(self.config.barColor[1], self.config.barColor[2], self.config.barColor[3])
 
         local border = frame:CreateTexture(nil, 'ARTWORK')

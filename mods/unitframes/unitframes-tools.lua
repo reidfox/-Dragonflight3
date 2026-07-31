@@ -28,6 +28,21 @@ local setup = {
         borderElite = media['tex:unitframes:uf_elite.blp'],
         borderRare = media['tex:unitframes:uf_rare.blp'],
         borderBoss = media['tex:unitframes:uf_boss.blp'],
+        reforgedPlayer = media['tex:unitframes:UI-TargetingFrameDF.blp'],
+        reforgedPlayerBg = media['tex:unitframes:UI-TargetingFrameDF-Background.blp'],
+        reforgedTarget = media['tex:unitframes:UI-TargetingFrameDF1.blp'],
+        reforgedTargetBg = media['tex:unitframes:UI-TargetingFrameDF1-Background.blp'],
+        reforgedTargetElite = media['tex:unitframes:UI-TargetingFrame-Elite.blp'],
+        reforgedTargetRare = media['tex:unitframes:UI-TargetingFrame-Rare.blp'],
+        reforgedTargetRareElite = media['tex:unitframes:UI-TargetingFrame-RareElite.blp'],
+        reforgedTargetBoss = media['tex:unitframes:UI-TargetingFrame-Boss.blp'],
+        reforgedMini = media['tex:unitframes:pet.blp'],
+        reforgedHealth = media['tex:unitframes:healthDF2.tga'],
+        reforgedPlayerPower = media['tex:unitframes:UI-HUD-UnitFrame-Player-PortraitOn-Bar-Mana-Status.tga'],
+        reforgedTargetPower = media['tex:unitframes:UI-HUD-UnitFrame-Target-PortraitOn-Bar-Mana-Status.blp'],
+        reforgedMiniHealth = media['tex:unitframes:UI-HUD-UnitFrame-TargetofTarget-PortraitOn-Bar-Health.tga'],
+        reforgedMiniPower = media['tex:unitframes:UI-HUD-UnitFrame-TargetofTarget-PortraitOn-Bar-Mana.blp'],
+        reforgedPlayerStatus = media['tex:unitframes:UI-Player-Status.blp'],
         groupLeader = media['tex:unitframes:groupleader.blp'],
         raidTargetIcon = 'Interface\\TargetingFrame\\UI-RaidTargetingIcons'
     },
@@ -345,6 +360,156 @@ function setup:CreateUnitFrame(unit, width, height)
     end
     table.insert(self.portraits, unitFrame)
     return unitFrame
+end
+
+function setup:IsReforgedSkinEnabled()
+    return DF.profile['gui-generator'] and DF.profile['gui-generator']['interfaceStyle'] == 'Simple Style'
+end
+
+function setup:GetReforgedTargetTexture()
+    local classification = UnitClassification('target')
+    if classification == 'worldboss' then
+        return self.textures.reforgedTargetBoss
+    elseif classification == 'rareelite' then
+        return self.textures.reforgedTargetRareElite
+    elseif classification == 'elite' then
+        return self.textures.reforgedTargetElite
+    elseif classification == 'rare' then
+        return self.textures.reforgedTargetRare
+    end
+    return self.textures.reforgedTarget
+end
+
+function setup:ApplyReforgedSkin(unitFrame)
+    if not self:IsReforgedSkinEnabled() or not unitFrame then return end
+
+    local unit = unitFrame.unit
+    local isPlayer = unit == 'player'
+    local isTarget = unit == 'target'
+    local isLarge = isPlayer or isTarget
+
+    unitFrame.borderBg:SetTexture(nil)
+    unitFrame.border:SetTexture(nil)
+    unitFrame.classBorderOverlay:SetTexture(nil)
+    unitFrame.infoBg.tex:SetTexture(nil)
+    if unitFrame.model.combatGlow2 then unitFrame.model.combatGlow2:SetTexture(nil) end
+    if unitFrame.model.restingGlow2 then unitFrame.model.restingGlow2:SetTexture(nil) end
+
+    if not unitFrame.reforgedBackground then
+        unitFrame.reforgedBackground = unitFrame:CreateTexture(nil, 'BACKGROUND')
+        unitFrame.reforgedFrame = unitFrame:CreateTexture(nil, 'ARTWORK')
+    end
+
+    unitFrame.reforgedBackground:ClearAllPoints()
+    unitFrame.reforgedFrame:ClearAllPoints()
+    unitFrame.portraitFrame:ClearAllPoints()
+    unitFrame.hpBar:ClearAllPoints()
+    unitFrame.powerBar:ClearAllPoints()
+    unitFrame.infoBg:ClearAllPoints()
+    unitFrame.name:ClearAllPoints()
+    unitFrame.level:ClearAllPoints()
+
+    if isLarge then
+        unitFrame:SetSize(232, 80)
+        unitFrame.reforgedBackground:SetSize(256, 128)
+        unitFrame.reforgedFrame:SetSize(256, 128)
+        unitFrame.portraitFrame:SetSize(62, 62)
+        unitFrame.model:SetSize(72, 72)
+        unitFrame.portrait2D:SetSize(60, 60)
+        unitFrame.classIcon:SetSize(60, 60)
+        unitFrame.hpBar:SetSize(130, 30)
+        unitFrame.powerBar:SetSize(130, 12)
+        unitFrame.hpBar:SetFillDirection('LEFT_TO_RIGHT')
+        unitFrame.powerBar:SetFillDirection('LEFT_TO_RIGHT')
+        unitFrame.hpBar:SetTextures(self.textures.reforgedHealth, self.textures.reforgedHealth)
+        unitFrame.hpBar.bg:SetVertexColor(0.08, 0.08, 0.08, 0.9)
+
+        if isTarget then
+            unitFrame.reforgedBackground:SetTexture(self.textures.reforgedTargetBg)
+            unitFrame.reforgedFrame:SetTexture(self:GetReforgedTargetTexture())
+            unitFrame.reforgedBackground:SetPoint('TOPRIGHT', unitFrame, 'TOPRIGHT', 0, 0)
+            unitFrame.reforgedFrame:SetPoint('TOPRIGHT', unitFrame, 'TOPRIGHT', 0, 0)
+            unitFrame.portraitFrame:SetPoint('TOPRIGHT', unitFrame, 'TOPRIGHT', -28, -18)
+            unitFrame.hpBar:SetPoint('TOPRIGHT', unitFrame, 'TOPRIGHT', -100, -29)
+            unitFrame.powerBar:SetPoint('TOPRIGHT', unitFrame, 'TOPRIGHT', -100, -53)
+            unitFrame.powerBar:SetTextures(self.textures.reforgedTargetPower, self.textures.reforgedTargetPower)
+            unitFrame.powerBar.bg:SetVertexColor(0.08, 0.08, 0.08, 0.9)
+            unitFrame.infoBg:SetPoint('TOPRIGHT', unitFrame, 'TOPRIGHT', -100, -10)
+            unitFrame.name:SetPoint('RIGHT', unitFrame.infoBg, 'RIGHT', -20, 0)
+            unitFrame.level:SetPoint('LEFT', unitFrame.infoBg, 'LEFT', 2, 0)
+        else
+            local showPlayerDragon = DF.profile['gui-generator'] and DF.profile['gui-generator']['playerDragon']
+            if showPlayerDragon then
+                unitFrame.reforgedBackground:SetTexture(self.textures.reforgedPlayerBg)
+                unitFrame.reforgedFrame:SetTexture(self.textures.reforgedPlayer)
+                unitFrame.reforgedBackground:SetTexCoord(0, 1, 0, 1)
+                unitFrame.reforgedFrame:SetTexCoord(0, 1, 0, 1)
+            else
+                unitFrame.reforgedBackground:SetTexture(self.textures.reforgedTargetBg)
+                unitFrame.reforgedFrame:SetTexture(self.textures.reforgedTarget)
+                unitFrame.reforgedBackground:SetTexCoord(1, 0, 0, 1)
+                unitFrame.reforgedFrame:SetTexCoord(1, 0, 0, 1)
+            end
+            unitFrame.reforgedBackground:SetPoint('TOPLEFT', unitFrame, 'TOPLEFT', 0, 0)
+            unitFrame.reforgedFrame:SetPoint('TOPLEFT', unitFrame, 'TOPLEFT', 0, 0)
+            unitFrame.portraitFrame:SetPoint('TOPLEFT', unitFrame, 'TOPLEFT', 28, -18)
+            unitFrame.hpBar:SetPoint('TOPLEFT', unitFrame, 'TOPLEFT', 100, -29)
+            unitFrame.powerBar:SetPoint('TOPLEFT', unitFrame, 'TOPLEFT', 100, -53)
+            unitFrame.powerBar:SetTextures(self.textures.reforgedPlayerPower, self.textures.reforgedPlayerPower)
+            unitFrame.powerBar.bg:SetVertexColor(0.08, 0.08, 0.08, 0.9)
+            unitFrame.infoBg:SetPoint('TOPLEFT', unitFrame, 'TOPLEFT', 82, -9)
+            unitFrame.name:SetPoint('LEFT', unitFrame.infoBg, 'LEFT', 2, 0)
+            unitFrame.level:SetPoint('RIGHT', unitFrame.infoBg, 'RIGHT', -2, 0)
+            if unitFrame.model.combatGlow then
+                unitFrame.model.combatGlow:ClearAllPoints()
+                unitFrame.model.combatGlow:SetTexture(self.textures.reforgedPlayerStatus)
+                unitFrame.model.combatGlow:SetSize(256, 128)
+                unitFrame.model.combatGlow:SetPoint('TOPLEFT', unitFrame, 'TOPLEFT', 0, 0)
+            end
+            if unitFrame.model.restingGlow then
+                unitFrame.model.restingGlow:ClearAllPoints()
+                unitFrame.model.restingGlow:SetTexture(self.textures.reforgedPlayerStatus)
+                unitFrame.model.restingGlow:SetSize(256, 128)
+                unitFrame.model.restingGlow:SetPoint('TOPLEFT', unitFrame, 'TOPLEFT', 0, 0)
+            end
+        end
+        unitFrame.infoBg:SetSize(130, 16)
+    else
+        unitFrame:SetSize(128, 50)
+        unitFrame.reforgedBackground:SetTexture(nil)
+        unitFrame.reforgedFrame:SetTexture(self.textures.reforgedMini)
+        unitFrame.reforgedFrame:SetSize(128, 64)
+        unitFrame.reforgedFrame:SetPoint('TOPLEFT', unitFrame, 'TOPLEFT', 0, 0)
+        unitFrame.portraitFrame:SetSize(40, 40)
+        unitFrame.portraitFrame:SetPoint('LEFT', unitFrame, 'LEFT', 10, 0)
+        unitFrame.model:SetSize(48, 48)
+        unitFrame.portrait2D:SetSize(38, 38)
+        unitFrame.classIcon:SetSize(38, 38)
+        unitFrame.hpBar:SetSize(72, 16)
+        unitFrame.hpBar:SetPoint('TOPLEFT', unitFrame, 'TOPLEFT', 48, -18)
+        unitFrame.hpBar:SetFillDirection('LEFT_TO_RIGHT')
+        unitFrame.hpBar:SetTextures(self.textures.reforgedMiniHealth, self.textures.reforgedMiniHealth)
+        unitFrame.hpBar.bg:SetVertexColor(0.08, 0.08, 0.08, 0.9)
+        unitFrame.powerBar:SetSize(72, 8)
+        unitFrame.powerBar:SetPoint('TOPLEFT', unitFrame, 'TOPLEFT', 48, -34)
+        unitFrame.powerBar:SetFillDirection('LEFT_TO_RIGHT')
+        unitFrame.powerBar:SetTextures(self.textures.reforgedMiniPower, self.textures.reforgedMiniPower)
+        unitFrame.powerBar.bg:SetVertexColor(0.08, 0.08, 0.08, 0.9)
+        unitFrame.infoBg:SetSize(72, 14)
+        unitFrame.infoBg:SetPoint('TOPLEFT', unitFrame, 'TOPLEFT', 48, -4)
+        unitFrame.name:SetPoint('LEFT', unitFrame.infoBg, 'LEFT', 2, 0)
+        unitFrame.level:SetPoint('RIGHT', unitFrame.infoBg, 'RIGHT', -2, 0)
+    end
+
+    unitFrame.hpBar:Update()
+    unitFrame.powerBar:Update()
+end
+
+function setup:ApplyReforgedSkinToAll()
+    if not self:IsReforgedSkinEnabled() then return end
+    for i = 1, table.getn(self.portraits) do
+        self:ApplyReforgedSkin(self.portraits[i])
+    end
 end
 
 function setup:ShowRightClickMenu(unit)
@@ -707,6 +872,10 @@ function setup:UpdateClassificationBorder(unitFrame)
         return
     end
     local classification = UnitClassification('target')
+    if self:IsReforgedSkinEnabled() and unitFrame.reforgedFrame then
+        unitFrame.reforgedFrame:SetTexture(self:GetReforgedTargetTexture())
+        return
+    end
     if classification == 'worldboss' then
         unitFrame.border:SetTexture(self.textures.borderBoss)
         unitFrame.border:SetTexCoord(0.25, 0.75, 0.25, 0.75)

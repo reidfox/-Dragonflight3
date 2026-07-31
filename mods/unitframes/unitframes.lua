@@ -48,4 +48,5 @@ DF:NewModule('unitframes', 1, 'PLAYER_LOGIN', function()
 
     local callbacks = setup:GenerateCallbacks()
     DF:NewCallbacks('unitframes', callbacks)
+    setup:ApplyReforgedSkinToAll()
 end)

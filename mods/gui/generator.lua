@@ -11,6 +11,8 @@ DF:NewDefaults('gui-generator', {
     guibgalpha = {value = 100, metadata = {element = 'slider', category = 'General', indexInCategory = 2, description = 'Background transparency for GUI frames', min = 0, max = 100, stepSize = 5}},
     guifont = {value = 'font:PT-Sans-Narrow-Bold.ttf', metadata = {element = 'dropdown', category = 'General', indexInCategory = 3, description = 'Font used throughout the GUI', options = media.fonts}},
     guimovable = {value = true, metadata = {element = 'checkbox', category = 'General', indexInCategory = 4, description = 'Allow dragging the GUI with mouse'}},
+    interfaceStyle = {value = 'Default', metadata = {element = 'dropdown', category = 'General', indexInCategory = 5, description = 'Interface style (requires UI reload)', options = {'Default', 'Simple Style'}}},
+    playerDragon = {value = false, metadata = {element = 'checkbox', category = 'General', indexInCategory = 6, description = 'Player Dragon (requires UI reload)', dependency = {key = 'interfaceStyle', state = 'Simple Style'}}},
 })
 
 DF:NewModule('gui-generator', 3, function()
@@ -440,6 +442,23 @@ DF:NewModule('gui-generator', 3, function()
 
     local guiBase = DF.setups.guiBase
     local callbacks = {}
+    local skinOptionsInitialized = {}
+
+    local function SkinOptionChanged(option)
+        if skinOptionsInitialized[option] then
+            DF.ui.StaticPopup_Show('Reload UI to apply the interface style?', 'Reload', function() ReloadUI() end, 'Later')
+        else
+            skinOptionsInitialized[option] = true
+        end
+    end
+
+    callbacks.interfaceStyle = function()
+        SkinOptionChanged('interfaceStyle')
+    end
+
+    callbacks.playerDragon = function()
+        SkinOptionChanged('playerDragon')
+    end
 
     callbacks.guiscale = function(value)
         guiBase.mainframe:SetScale(value / 100)

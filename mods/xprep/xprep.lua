@@ -62,8 +62,24 @@ DF:NewDefaults('xprep', {
 })
 
 DF:NewModule('xprep', 1, 'PLAYER_LOGIN', function()
+    local useReforgedSkin = DF.profile['gui-generator'] and DF.profile['gui-generator']['interfaceStyle'] == 'Simple Style'
+    local function ApplyReforgedBorder(bar)
+        if not useReforgedSkin then return end
+
+        bar.reforgedBorderLeft = bar:CreateTexture(nil, 'OVERLAY')
+        bar.reforgedBorderLeft:SetTexture(media['tex:xprep:border_half.tga'])
+        bar.reforgedBorderLeft:SetPoint('TOPLEFT', bar, 'TOPLEFT', -2, 5)
+        bar.reforgedBorderLeft:SetPoint('BOTTOMRIGHT', bar, 'BOTTOM', 1, -5)
+
+        bar.reforgedBorderRight = bar:CreateTexture(nil, 'OVERLAY')
+        bar.reforgedBorderRight:SetTexture(media['tex:xprep:border_half.tga'])
+        bar.reforgedBorderRight:SetTexCoord(1, 0, 0, 1)
+        bar.reforgedBorderRight:SetPoint('TOPLEFT', bar, 'TOP', -1, 5)
+        bar.reforgedBorderRight:SetPoint('BOTTOMRIGHT', bar, 'BOTTOMRIGHT', 2, -5)
+    end
+
     local xpbar = DF.animations.CreateStatusBar(UIParent, DF.profile['xprep']['xpBarWidth'], DF.profile['xprep']['xpBarHeight'], {pulse = DF.profile['xprep']['xpBarPulse']}, 'DF_XPBar')
-    xpbar:SetTextures(media['tex:generic:xpbar_1.blp'], media['tex:generic:xpbar_1_bg.blp'])
+    xpbar:SetTextures(useReforgedSkin and media['tex:xprep:main.tga'] or media['tex:generic:xpbar_1.blp'], media['tex:generic:xpbar_1_bg.blp'])
     xpbar:SetPoint('BOTTOM', UIParent, 'BOTTOM', -0, 135)
     local color = DF.profile['xprep']['xpBarColour']
     xpbar:SetFillColor(color[1], color[2], color[3], color[4])
@@ -75,6 +91,7 @@ DF:NewModule('xprep', 1, 'PLAYER_LOGIN', function()
     if not DF.profile['xprep']['xpBarEnabled'] then
         xpbar:Hide()
     end
+    ApplyReforgedBorder(xpbar)
 
     local xpText = xpbar:CreateFontString(nil, 'OVERLAY')
     local xpFont = DF.profile['xprep']['xpBarTextFont']
@@ -97,7 +114,7 @@ DF:NewModule('xprep', 1, 'PLAYER_LOGIN', function()
     xpRestedText:SetTextColor(restedColor[1], restedColor[2], restedColor[3], restedColor[4])
 
     local repbar = DF.animations.CreateStatusBar(UIParent, DF.profile['xprep']['repBarWidth'], DF.profile['xprep']['repBarHeight'], {pulse = DF.profile['xprep']['repBarPulse']}, 'DF_RepBar')
-    repbar:SetTextures(media['tex:generic:xpbar_1.blp'], media['tex:generic:xpbar_1_bg.blp'])
+    repbar:SetTextures(useReforgedSkin and media['tex:xprep:main.tga'] or media['tex:generic:xpbar_1.blp'], media['tex:generic:xpbar_1_bg.blp'])
     repbar:SetPoint('BOTTOMLEFT', UIParent, 'BOTTOM', 250, 15)
     repbar:SetAlpha(DF.profile['xprep']['repBarAlpha'])
     local repPulseColor = DF.profile['xprep']['repBarPulseColour']
@@ -107,6 +124,7 @@ DF:NewModule('xprep', 1, 'PLAYER_LOGIN', function()
     if not DF.profile['xprep']['repBarEnabled'] then
         repbar:Hide()
     end
+    ApplyReforgedBorder(repbar)
 
     local repText = repbar:CreateFontString(nil, 'OVERLAY')
     local repFont = DF.profile['xprep']['repBarTextFont']

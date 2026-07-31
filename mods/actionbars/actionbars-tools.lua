@@ -57,6 +57,8 @@ local setup = {
     textures = {
         border = media['tex:actionbars:btn_border.blp'],
         highlight = media['tex:actionbars:btn_highlight_strong.blp'],
+        reforgedBorder = media['tex:actionbars:border.blp'],
+        reforgedHighlight = media['tex:actionbars:uiactionbariconframehighlight.tga'],
         bgAlly = media['tex:actionbars:btn_bg_ally.blp'],
         bgHorde = media['tex:actionbars:btn_bg_horde.blp'],
         equippedBorderEdge = 'Interface\\Buttons\\White8x8',
@@ -80,16 +82,19 @@ local setup = {
 function setup:CreateActionButton(parent, name, actionID)
     local button = DF.ui.SlotButton(parent, name, self.buttonSize)
     button:SetID(actionID)
+    local useReforgedSkin = DF.profile['gui-generator'] and DF.profile['gui-generator']['interfaceStyle'] == 'Simple Style'
+    local borderTexture = useReforgedSkin and self.textures.reforgedBorder or self.textures.border
+    local highlightTexture = useReforgedSkin and self.textures.reforgedHighlight or self.textures.highlight
 
     button.border:SetBackdrop(nil)
     local borderTex = button.border:CreateTexture(nil, 'BACKGROUND')
-    borderTex:SetTexture(self.textures.border)
+    borderTex:SetTexture(borderTexture)
     borderTex:SetAllPoints(button.border)
     -- borderTex:SetVertexColor(0, 0, 0)
 
     button.highlight:SetBackdrop(nil)
     button.highlightTex = button.highlight:CreateTexture(nil, 'BACKGROUND')
-    button.highlightTex:SetTexture(self.textures.highlight)
+    button.highlightTex:SetTexture(highlightTexture)
     button.highlightTex:SetPoint('TOPLEFT', button.highlight, 'TOPLEFT', -4, 4)
     button.highlightTex:SetPoint('BOTTOMRIGHT', button.highlight, 'BOTTOMRIGHT', 4, -4)
     local hColor = DF.profile['actionbars']['highlightColour']
@@ -97,7 +102,7 @@ function setup:CreateActionButton(parent, name, actionID)
 
     button.checked:SetBackdrop(nil)
     button.checkedTex = button.checked:CreateTexture(nil, 'ARTWORK')
-    button.checkedTex:SetTexture(self.textures.highlight)
+    button.checkedTex:SetTexture(highlightTexture)
     button.checkedTex:SetPoint('TOPLEFT', button.checked, 'TOPLEFT', -4, 4)
     button.checkedTex:SetPoint('BOTTOMRIGHT', button.checked, 'BOTTOMRIGHT', 4, -4)
     local cColor = DF.profile['actionbars']['checkedColour']
@@ -159,7 +164,7 @@ function setup:CreateActionButton(parent, name, actionID)
     button.reactive:SetFrameLevel(button:GetFrameLevel() + 3)
     button.reactive:SetBackdrop(nil)
     local reactiveTex = button.reactive:CreateTexture(nil, 'OVERLAY')
-    reactiveTex:SetTexture(self.textures.highlight)
+    reactiveTex:SetTexture(highlightTexture)
     reactiveTex:SetPoint('TOPLEFT', button.reactive, 'TOPLEFT', -4, 4)
     reactiveTex:SetPoint('BOTTOMRIGHT', button.reactive, 'BOTTOMRIGHT', 4, -4)
     reactiveTex:SetVertexColor(0, 1, 0, 0.8)
