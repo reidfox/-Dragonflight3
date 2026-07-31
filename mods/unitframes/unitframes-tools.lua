@@ -380,6 +380,36 @@ function setup:GetReforgedTargetTexture()
     return self.textures.reforgedTarget
 end
 
+function setup:ApplySimplePortraitTexture(unitFrame)
+    if unitFrame.unit == 'player' then
+        unitFrame.border:SetTexture(self.textures.reforgedPlayer)
+        unitFrame.border:SetTexCoord(10/256, 74/256, 7/128, 71/128)
+    elseif unitFrame.unit == 'target' then
+        unitFrame.border:SetTexture(self:GetReforgedTargetTexture())
+        unitFrame.border:SetTexCoord(182/256, 246/256, 7/128, 71/128)
+    else
+        unitFrame.border:SetTexture(self.textures.reforgedMini)
+        unitFrame.border:SetTexCoord(0, 40/128, 0, 40/64)
+    end
+    unitFrame.borderBg:SetTexture(nil)
+end
+
+function setup:GetSimpleHealthTexture(unitFrame)
+    if unitFrame.unit == 'player' or unitFrame.unit == 'target' then
+        return self.textures.reforgedHealth
+    end
+    return self.textures.reforgedMiniHealth
+end
+
+function setup:GetSimplePowerTexture(unitFrame)
+    if unitFrame.unit == 'player' then
+        return self.textures.reforgedPlayerPower
+    elseif unitFrame.unit == 'target' then
+        return self.textures.reforgedTargetPower
+    end
+    return self.textures.reforgedMiniPower
+end
+
 function setup:ApplyReforgedSkin(unitFrame)
     if not self:IsReforgedSkinEnabled() or not unitFrame then return end
 
@@ -900,8 +930,9 @@ function setup:UpdateClassificationBorder(unitFrame)
         return
     end
     local classification = UnitClassification('target')
-    if self:IsReforgedSkinEnabled() and unitFrame.reforgedFrame then
-        unitFrame.reforgedFrame:SetTexture(self:GetReforgedTargetTexture())
+    local selectedBorder = DF_Profiles and DF.profile['unitframes'] and DF.profile['unitframes']['targetPortraitBorderTexture']
+    if selectedBorder == 'Simple Style' then
+        self:ApplySimplePortraitTexture(unitFrame)
         return
     end
     if classification == 'worldboss' then
@@ -1836,7 +1867,7 @@ function setup:GenerateDefaults()
         defaults[frame.key..'InfoBgHeight'] = {value = 16, metadata = {element = 'slider', category = catGeneral, indexInCategory = 12, description = 'Name bar height', min = 8, max = 30, step = 1, dependency = {key = frame.key..'Enabled', state = true}}}
         defaults[frame.key..'HealthBarWidth'] = {value = 120, metadata = {element = 'slider', category = catHealthBar, indexInCategory = 1, description = 'Health bar width', min = 60, max = 300, step = 1, dependency = {key = frame.key..'Enabled', state = true}}}
         defaults[frame.key..'HealthBarHeight'] = {value = 20, metadata = {element = 'slider', category = catHealthBar, indexInCategory = 2, description = 'Health bar height', min = 10, max = 50, step = 1, dependency = {key = frame.key..'Enabled', state = true}}}
-        defaults[frame.key..'HealthBarTexture'] = {value = healthBarTexture, metadata = {element = 'dropdown', category = catHealthBar, indexInCategory = 3, description = 'Health bar texture', options = {'aurora_hpbar', 'aurora_hpbar_sharp', 'aurora_hpbar_reversed', 'aurora_hpbar_sharp_reversed', 'white8x8'}, dependency = {key = frame.key..'Enabled', state = true}}}
+        defaults[frame.key..'HealthBarTexture'] = {value = healthBarTexture, metadata = {element = 'dropdown', category = catHealthBar, indexInCategory = 3, description = 'Health bar texture', options = {'aurora_hpbar', 'aurora_hpbar_sharp', 'aurora_hpbar_reversed', 'aurora_hpbar_sharp_reversed', 'Simple Style', 'white8x8'}, dependency = {key = frame.key..'Enabled', state = true}}}
 
         defaults[frame.key..'HealthBarFillDirection'] = {value = healthBarFillDirection, metadata = {element = 'dropdown', category = catHealthBar, indexInCategory = 4, description = 'Health bar fill direction', options = {'LEFT_TO_RIGHT', 'RIGHT_TO_LEFT'}, dependency = {key = frame.key..'Enabled', state = true}}}
         local colorModeOptions = hasPlayerFeatures and {'class', 'reaction', 'custom', 'mirror'} or (frame.key == 'pet' and {'class', 'reaction', 'custom', 'mirror'} or {'class', 'reaction', 'custom'})
@@ -1868,7 +1899,7 @@ function setup:GenerateDefaults()
         end
         defaults[frame.key..'ManaBarWidth'] = {value = 120, metadata = {element = 'slider', category = catPowerBar, indexInCategory = 1, description = 'Power bar width', min = 60, max = 300, step = 1, dependency = {key = frame.key..'Enabled', state = true}}}
         defaults[frame.key..'ManaBarHeight'] = {value = 12, metadata = {element = 'slider', category = catPowerBar, indexInCategory = 2, description = 'Power bar height', min = 6, max = 30, step = 1, dependency = {key = frame.key..'Enabled', state = true}}}
-        defaults[frame.key..'ManaBarTexture'] = {value = manaBarTexture, metadata = {element = 'dropdown', category = catPowerBar, indexInCategory = 3, description = 'Power bar texture', options = {'aurora_hpbar', 'aurora_hpbar_sharp', 'aurora_hpbar_reversed', 'aurora_hpbar_sharp_reversed', 'white8x8'}, dependency = {key = frame.key..'Enabled', state = true}}}
+        defaults[frame.key..'ManaBarTexture'] = {value = manaBarTexture, metadata = {element = 'dropdown', category = catPowerBar, indexInCategory = 3, description = 'Power bar texture', options = {'aurora_hpbar', 'aurora_hpbar_sharp', 'aurora_hpbar_reversed', 'aurora_hpbar_sharp_reversed', 'Simple Style', 'white8x8'}, dependency = {key = frame.key..'Enabled', state = true}}}
         defaults[frame.key..'ManaBarFillDirection'] = {value = manaBarFillDirection, metadata = {element = 'dropdown', category = catPowerBar, indexInCategory = 4, description = 'Power bar fill direction', options = {'LEFT_TO_RIGHT', 'RIGHT_TO_LEFT'}, dependency = {key = frame.key..'Enabled', state = true}}}
         defaults[frame.key..'ManaBarSmoothTransition'] = {value = true, metadata = {element = 'checkbox', category = catPowerBar, indexInCategory = 5, description = 'Smooth power bar transition', dependency = {key = frame.key..'Enabled', state = true}}}
         defaults[frame.key..'ManaBarEnablePulse'] = {value = true, metadata = {element = 'checkbox', category = catPowerBar, indexInCategory = 6, description = 'Enable power bar pulse', dependency = {key = frame.key..'Enabled', state = true}}}
@@ -1897,7 +1928,7 @@ function setup:GenerateDefaults()
         defaults[frame.key..'DebuffStackSize'] = {value = 8, metadata = {element = 'slider', category = catBuffsDebuffs, indexInCategory = 10, description = 'Debuff stack count size', min = 5, max = 20, step = 1, dependency = {key = frame.key..'Enabled', state = true}}}
         defaults[frame.key..'DebuffStackOffsetX'] = {value = 0, metadata = {element = 'slider', category = catBuffsDebuffs, indexInCategory = 11, description = 'Debuff stack X offset', min = -20, max = 20, step = 1, dependency = {key = frame.key..'Enabled', state = true}}}
         defaults[frame.key..'DebuffStackOffsetY'] = {value = 0, metadata = {element = 'slider', category = catBuffsDebuffs, indexInCategory = 12, description = 'Debuff stack Y offset', min = -20, max = 20, step = 1, dependency = {key = frame.key..'Enabled', state = true}}}
-        defaults[frame.key..'PortraitBorderTexture'] = {value = portraitBorderTexture, metadata = {element = 'dropdown', category = catEffects, indexInCategory = 1, description = 'Portrait border texture', options = {'portrait_border_edge', 'portrait_border', 'portrait_border_base'}, dependency = {key = frame.key..'Enabled', state = true}}}
+        defaults[frame.key..'PortraitBorderTexture'] = {value = portraitBorderTexture, metadata = {element = 'dropdown', category = catEffects, indexInCategory = 1, description = 'Portrait border texture', options = {'portrait_border_edge', 'portrait_border', 'portrait_border_base', 'Simple Style'}, dependency = {key = frame.key..'Enabled', state = true}}}
         defaults[frame.key..'FlipPortraitBorder'] = {value = flipPortraitBorder, metadata = {element = 'checkbox', category = catEffects, indexInCategory = 2, description = 'Flip portrait border horizontally', dependency = {key = frame.key..'Enabled', state = true}}}
         defaults[frame.key..'PortraitBorderColor'] = {value = {1, 1, 1, 1}, metadata = {element = 'colorpicker', category = catEffects, indexInCategory = 3, description = 'Portrait border color', dependency = {key = frame.key..'Enabled', state = true}}}
         defaults[frame.key..'CombatGlowTextures'] = {value = 'Both', metadata = {element = 'dropdown', category = catEffects, indexInCategory = 4, description = 'Combat glow textures', options = {'Both', 'Portrait Only', 'Bar Only', 'None'}, dependency = {key = frame.key..'Enabled', state = true}}}
@@ -2435,7 +2466,12 @@ function setup:GenerateCallbacks()
             for j = 1, table.getn(setup.portraits) do
                 local portrait = setup.portraits[j]
                 if (frame.key == 'party' and string.find(portrait.unit, 'party')) or portrait.unit == frame.key then
-                    local tex = value == 'white8x8' and 'Interface\\Buttons\\White8x8' or media['tex:unitframes:'..value..'.tga']
+                    local tex
+                    if value == 'Simple Style' then
+                        tex = setup:GetSimpleHealthTexture(portrait)
+                    else
+                        tex = value == 'white8x8' and 'Interface\\Buttons\\White8x8' or media['tex:unitframes:'..value..'.tga']
+                    end
                     portrait.hpBar:SetTextures(tex, tex)
                 end
             end
@@ -2492,7 +2528,12 @@ function setup:GenerateCallbacks()
             for j = 1, table.getn(setup.portraits) do
                 local portrait = setup.portraits[j]
                 if (frame.key == 'party' and string.find(portrait.unit, 'party')) or portrait.unit == frame.key then
-                    local tex = value == 'white8x8' and 'Interface\\Buttons\\White8x8' or media['tex:unitframes:'..value..'.tga']
+                    local tex
+                    if value == 'Simple Style' then
+                        tex = setup:GetSimplePowerTexture(portrait)
+                    else
+                        tex = value == 'white8x8' and 'Interface\\Buttons\\White8x8' or media['tex:unitframes:'..value..'.tga']
+                    end
                     portrait.powerBar:SetTextures(tex, tex)
                 end
             end
@@ -2727,9 +2768,16 @@ function setup:GenerateCallbacks()
                         tex = setup.textures.portraitBorderAlt2
                         glowTex = setup.textures.portraitBorderGlowAlt
                         bgTex = setup.textures.portraitBorderBg
+                    elseif value == 'Simple Style' then
+                        setup:ApplySimplePortraitTexture(portrait)
+                        tex = nil
                     end
-                    portrait.border:SetTexture(tex)
-                    portrait.borderBg:SetTexture(bgTex)
+                    if tex then
+                        portrait.border:SetTexture(tex)
+                        portrait.border:SetTexCoord(0, 1, 0, 1)
+                        portrait.borderBg:SetTexture(bgTex)
+                        portrait.borderBg:SetTexCoord(0, 1, 0, 1)
+                    end
                     if portrait.model.combatGlow then portrait.model.combatGlow:SetTexture(glowTex) end
                     if portrait.model.restingGlow then portrait.model.restingGlow:SetTexture(glowTex) end
                 end
@@ -2747,6 +2795,10 @@ function setup:GenerateCallbacks()
                     end
                     local borderKey = string.find(portrait.unit, 'party') and 'partyPortraitBorderTexture' or portrait.unit..'PortraitBorderTexture'
                     local borderTexture = (DF_Profiles and DF.profile['unitframes'] and DF.profile['unitframes'][borderKey]) or 'portrait_border_edge'
+                    if borderTexture == 'Simple Style' then
+                        setup:ApplySimplePortraitTexture(portrait)
+                        return
+                    end
                     if value then
                         portrait.border:SetTexCoord(1, 0, 0, 1)
                         portrait.borderBg:SetTexCoord(1, 0, 0, 1)
