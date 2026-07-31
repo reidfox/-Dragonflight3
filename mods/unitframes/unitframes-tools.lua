@@ -383,15 +383,53 @@ end
 function setup:ApplySimplePortraitTexture(unitFrame)
     if unitFrame.unit == 'player' then
         unitFrame.border:SetTexture(self.textures.reforgedPlayer)
-        unitFrame.border:SetTexCoord(10/256, 74/256, 7/128, 71/128)
+        unitFrame.border:SetTexCoord(216/256, 154/256, 7/128, 69/128)
     elseif unitFrame.unit == 'target' then
         unitFrame.border:SetTexture(self:GetReforgedTargetTexture())
-        unitFrame.border:SetTexCoord(182/256, 246/256, 7/128, 71/128)
+        unitFrame.border:SetTexCoord(154/256, 216/256, 7/128, 69/128)
     else
         unitFrame.border:SetTexture(self.textures.reforgedMini)
-        unitFrame.border:SetTexCoord(0, 40/128, 0, 40/64)
+        unitFrame.border:SetTexCoord(0, 48/128, 0, 48/64)
     end
     unitFrame.borderBg:SetTexture(nil)
+end
+
+function setup:SetSimpleBarWrapper(unitFrame, bar, kind, enabled)
+    local wrapperKey = kind == 'health' and 'simpleHealthWrapper' or 'simplePowerWrapper'
+    if not bar[wrapperKey] then
+        bar[wrapperKey] = bar:CreateTexture(nil, 'OVERLAY')
+        bar[wrapperKey]:SetAllPoints(bar)
+    end
+
+    local wrapper = bar[wrapperKey]
+    if not enabled then
+        wrapper:Hide()
+        return
+    end
+
+    if unitFrame.unit == 'player' then
+        wrapper:SetTexture(self.textures.reforgedPlayer)
+        if kind == 'health' then
+            wrapper:SetTexCoord(155/256, 28/256, 31/128, 59/128)
+        else
+            wrapper:SetTexCoord(155/256, 28/256, 57/128, 69/128)
+        end
+    elseif unitFrame.unit == 'target' then
+        wrapper:SetTexture(self:GetReforgedTargetTexture())
+        if kind == 'health' then
+            wrapper:SetTexCoord(28/256, 155/256, 31/128, 59/128)
+        else
+            wrapper:SetTexCoord(28/256, 155/256, 57/128, 69/128)
+        end
+    else
+        wrapper:SetTexture(self.textures.reforgedMini)
+        if kind == 'health' then
+            wrapper:SetTexCoord(40/128, 116/128, 16/64, 35/64)
+        else
+            wrapper:SetTexCoord(40/128, 116/128, 34/64, 44/64)
+        end
+    end
+    wrapper:Show()
 end
 
 function setup:GetSimpleHealthTexture(unitFrame)
@@ -930,6 +968,14 @@ function setup:UpdateClassificationBorder(unitFrame)
         return
     end
     local classification = UnitClassification('target')
+    if DF_Profiles and DF.profile['unitframes'] then
+        if DF.profile['unitframes']['targetHealthBarTexture'] == 'Simple Style' then
+            self:SetSimpleBarWrapper(unitFrame, unitFrame.hpBar, 'health', true)
+        end
+        if DF.profile['unitframes']['targetManaBarTexture'] == 'Simple Style' then
+            self:SetSimpleBarWrapper(unitFrame, unitFrame.powerBar, 'power', true)
+        end
+    end
     local selectedBorder = DF_Profiles and DF.profile['unitframes'] and DF.profile['unitframes']['targetPortraitBorderTexture']
     if selectedBorder == 'Simple Style' then
         self:ApplySimplePortraitTexture(unitFrame)
@@ -2473,6 +2519,7 @@ function setup:GenerateCallbacks()
                         tex = value == 'white8x8' and 'Interface\\Buttons\\White8x8' or media['tex:unitframes:'..value..'.tga']
                     end
                     portrait.hpBar:SetTextures(tex, tex)
+                    setup:SetSimpleBarWrapper(portrait, portrait.hpBar, 'health', value == 'Simple Style')
                 end
             end
         end
@@ -2535,6 +2582,7 @@ function setup:GenerateCallbacks()
                         tex = value == 'white8x8' and 'Interface\\Buttons\\White8x8' or media['tex:unitframes:'..value..'.tga']
                     end
                     portrait.powerBar:SetTextures(tex, tex)
+                    setup:SetSimpleBarWrapper(portrait, portrait.powerBar, 'power', value == 'Simple Style')
                 end
             end
         end
