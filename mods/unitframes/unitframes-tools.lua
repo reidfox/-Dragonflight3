@@ -433,7 +433,7 @@ function setup:SetSimpleBarWrapper(unitFrame, bar, kind, enabled)
 end
 
 function setup:SetSimpleBarFillOffset(bar, enabled)
-    local yOffset = enabled and 2 or 0
+    local yOffset = enabled and 3 or 0
 
     bar.fill:ClearAllPoints()
     bar.fill:SetPoint('TOPLEFT', bar, 'TOPLEFT', 0, yOffset)
