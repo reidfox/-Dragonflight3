@@ -437,11 +437,25 @@ function setup:SetSimplePowerBarOffset(unitFrame, enabled)
     if not bar.simpleBasePoint then
         local point, relativeTo, relativePoint, x, y = bar:GetPoint(1)
         bar.simpleBasePoint = {point, relativeTo, relativePoint, x or 0, y or 0}
+        bar.simpleBaseHeight = bar:GetHeight()
     end
 
     local anchor = bar.simpleBasePoint
+    bar:SetHeight(bar.simpleBaseHeight - (enabled and 1 or 0))
     bar:ClearAllPoints()
     bar:SetPoint(anchor[1], anchor[2], anchor[3], anchor[4], anchor[5] + (enabled and 2 or 0))
+end
+
+function setup:SetSimpleTargetTargetNameOffset(unitFrame, enabled)
+    if unitFrame.unit ~= 'targettarget' then return end
+    if not unitFrame.simpleNameBasePoint then
+        local point, relativeTo, relativePoint, x, y = unitFrame.name:GetPoint(1)
+        unitFrame.simpleNameBasePoint = {point, relativeTo, relativePoint, x or 0, y or 0}
+    end
+
+    local anchor = unitFrame.simpleNameBasePoint
+    unitFrame.name:ClearAllPoints()
+    unitFrame.name:SetPoint(anchor[1], anchor[2], anchor[3], anchor[4] + (enabled and 1 or 0), anchor[5])
 end
 
 function setup:GetSimpleHealthTexture(unitFrame)
@@ -2356,7 +2370,10 @@ function setup:GenerateCallbacks()
             for j = 1, table.getn(setup.portraits) do
                 local portrait = setup.portraits[j]
                 if (frame.key == 'party' and string.find(portrait.unit, 'party')) or portrait.unit == frame.key then
-                    portrait.powerBar:SetHeight(value)
+                    portrait.powerBar.simpleBaseHeight = value
+                    local textureKey = string.find(portrait.unit, 'party') and 'partyManaBarTexture' or portrait.unit..'ManaBarTexture'
+                    local isSimple = DF_Profiles and DF.profile['unitframes'] and DF.profile['unitframes'][textureKey] == 'Simple Style'
+                    portrait.powerBar:SetHeight(value - (isSimple and 1 or 0))
                     portrait.powerBar:Update()
                 end
             end
@@ -2860,6 +2877,7 @@ function setup:GenerateCallbacks()
                     end
                     if portrait.model.combatGlow then portrait.model.combatGlow:SetTexture(glowTex) end
                     if portrait.model.restingGlow then portrait.model.restingGlow:SetTexture(glowTex) end
+                    setup:SetSimpleTargetTargetNameOffset(portrait, value == 'Simple Style')
                 end
             end
         end
