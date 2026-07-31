@@ -187,6 +187,13 @@ DF:NewModule('chat', 1, function()
         local hl = chatTab:GetHighlightTexture()
         if hl then hl:Hide() end
 
+        -- Blizzard lowers button text while it is pushed/selected. The custom
+        -- selected tab art is already positioned correctly, so keep its label
+        -- centered at the same height as inactive tabs.
+        if chatTab.SetPushedTextOffset then
+            chatTab:SetPushedTextOffset(0, 0)
+        end
+
         local left = chatTab:CreateTexture(nil, 'BACKGROUND')
         left:SetTexture(tex)
         left:SetSize(35, 36)
