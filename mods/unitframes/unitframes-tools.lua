@@ -776,8 +776,20 @@ end
 function setup:UpdateBarText(unitFrame)
     local profileKey = string.find(unitFrame.unit, 'party') and 'party' or unitFrame.unit
     local unitProfile = DF_Profiles and DF.profile['unitframes']
-    local hpTextYOffset = unitProfile and unitProfile[profileKey..'HealthBarTexture'] == 'Simple Style' and 1 or 0
-    local manaTextYOffset = unitProfile and unitProfile[profileKey..'ManaBarTexture'] == 'Simple Style' and 1 or 0
+    local hpTextYOffset = unitProfile and unitProfile[profileKey..'HealthBarTexture'] == 'Simple Style' and 3 or 0
+    local manaTextYOffset = unitProfile and unitProfile[profileKey..'ManaBarTexture'] == 'Simple Style' and 3 or 0
+
+    -- A single CENTER/LEFT/RIGHT point centers the FontString's baseline box,
+    -- not the visible glyphs. Give each label the full bar height so MIDDLE
+    -- justification can place the numbers optically inside the wrapper.
+    unitFrame.hpBar.text:SetHeight(unitFrame.hpBar:GetHeight())
+    unitFrame.hpBar.pctText:SetHeight(unitFrame.hpBar:GetHeight())
+    unitFrame.powerBar.text:SetHeight(unitFrame.powerBar:GetHeight())
+    unitFrame.powerBar.pctText:SetHeight(unitFrame.powerBar:GetHeight())
+    unitFrame.hpBar.text:SetJustifyV('MIDDLE')
+    unitFrame.hpBar.pctText:SetJustifyV('MIDDLE')
+    unitFrame.powerBar.text:SetJustifyV('MIDDLE')
+    unitFrame.powerBar.pctText:SetJustifyV('MIDDLE')
 
     if UnitIsDead(unitFrame.unit) or UnitIsGhost(unitFrame.unit) then
         unitFrame.hpBar.text:ClearAllPoints()
