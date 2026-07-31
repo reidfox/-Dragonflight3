@@ -432,6 +432,18 @@ function setup:SetSimpleBarWrapper(unitFrame, bar, kind, enabled)
     wrapper:Show()
 end
 
+function setup:SetSimpleBarFillOffset(bar, enabled)
+    local yOffset = enabled and 2 or 0
+
+    bar.fill:ClearAllPoints()
+    bar.fill:SetPoint('TOPLEFT', bar, 'TOPLEFT', 0, yOffset)
+
+    bar.bg:ClearAllPoints()
+    bar.bg:SetPoint('TOPLEFT', bar, 'TOPLEFT', 0, yOffset)
+    bar.bg:SetPoint('BOTTOMRIGHT', bar, 'BOTTOMRIGHT', 0, yOffset)
+    bar:Update()
+end
+
 function setup:SetSimplePowerBarOffset(unitFrame, enabled)
     local bar = unitFrame.powerBar
     if not bar.simpleBasePoint then
@@ -2570,6 +2582,7 @@ function setup:GenerateCallbacks()
                     end
                     portrait.hpBar:SetTextures(tex, tex)
                     setup:SetSimpleBarWrapper(portrait, portrait.hpBar, 'health', value == 'Simple Style')
+                    setup:SetSimpleBarFillOffset(portrait.hpBar, value == 'Simple Style')
                 end
             end
         end
@@ -2634,6 +2647,7 @@ function setup:GenerateCallbacks()
                     portrait.powerBar:SetTextures(tex, tex)
                     setup:SetSimpleBarWrapper(portrait, portrait.powerBar, 'power', value == 'Simple Style')
                     setup:SetSimplePowerBarOffset(portrait, value == 'Simple Style')
+                    setup:SetSimpleBarFillOffset(portrait.powerBar, value == 'Simple Style')
                 end
             end
         end
