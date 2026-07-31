@@ -251,12 +251,27 @@ DF:NewModule('chat', 1, function()
         chatTab.auroraSkinned = true
     end
 
+    local function CenterChatTabText(chatTab)
+        if not chatTab then return end
+        local text = _G[chatTab:GetName()..'Text']
+        if not text and chatTab.GetFontString then
+            text = chatTab:GetFontString()
+        end
+        if text then
+            text:ClearAllPoints()
+            text:SetPoint('CENTER', chatTab, 'CENTER', 0, 1)
+            text:SetJustifyH('CENTER')
+            text:SetJustifyV('MIDDLE')
+        end
+    end
+
     local oldFCF_SelectDockFrame = _G.FCF_SelectDockFrame
     _G.FCF_SelectDockFrame = function(frame)
         oldFCF_SelectDockFrame(frame)
         for i = 1, NUM_CHAT_WINDOWS do
             local tab = _G['ChatFrame'..i..'Tab']
             if tab and tab.auroraSkinned then
+                CenterChatTabText(tab)
                 local isSelected = (SELECTED_DOCK_FRAME and SELECTED_DOCK_FRAME:GetID() == i)
                 if isSelected then
                     tab.auroraLeft:Hide()
@@ -284,6 +299,7 @@ DF:NewModule('chat', 1, function()
             local chatFrame = _G['ChatFrame'..i]
             local chatTab = _G['ChatFrame'..i..'Tab']
             if chatFrame and chatFrame.isDocked and chatTab then
+                CenterChatTabText(chatTab)
                 local isSelected = (SELECTED_DOCK_FRAME and SELECTED_DOCK_FRAME:GetID() == i)
                 local yOffset = isSelected and 0 or 3
                 local point, relativeTo, relativePoint, x, y = chatTab:GetPoint(1)
@@ -300,6 +316,7 @@ DF:NewModule('chat', 1, function()
         local tab = _G['ChatFrame'..i..'Tab']
         if tab then
             SkinChatTab(tab)
+            CenterChatTabText(tab)
             -- tab:ClearAllPoints()
             -- tab:SetPoint('BOTTOMLEFT', _G['ChatFrame'..i], 'TOPLEFT', 50, 15)
         end
