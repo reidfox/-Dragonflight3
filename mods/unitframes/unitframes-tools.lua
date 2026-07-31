@@ -443,7 +443,7 @@ function setup:SetSimplePowerBarOffset(unitFrame, enabled)
     local anchor = bar.simpleBasePoint
     bar:SetHeight(bar.simpleBaseHeight - (enabled and 1 or 0))
     bar:ClearAllPoints()
-    bar:SetPoint(anchor[1], anchor[2], anchor[3], anchor[4], anchor[5] + (enabled and 2 or 0))
+    bar:SetPoint(anchor[1], anchor[2], anchor[3], anchor[4], anchor[5] + 2)
 end
 
 function setup:SetSimpleTargetTargetNameOffset(unitFrame, enabled)
@@ -455,7 +455,7 @@ function setup:SetSimpleTargetTargetNameOffset(unitFrame, enabled)
 
     local anchor = unitFrame.simpleNameBasePoint
     unitFrame.name:ClearAllPoints()
-    unitFrame.name:SetPoint(anchor[1], anchor[2], anchor[3], anchor[4] + (enabled and 1 or 0), anchor[5])
+    unitFrame.name:SetPoint(anchor[1], anchor[2], anchor[3], anchor[4] + 1, anchor[5])
 end
 
 function setup:GetSimpleHealthTexture(unitFrame)
