@@ -251,7 +251,7 @@ DF:NewModule('chat', 1, function()
         chatTab.auroraSkinned = true
     end
 
-    local function CenterChatTabText(chatTab)
+    local function CenterChatTabText(chatTab, isSelected)
         if not chatTab then return end
         local text = _G[chatTab:GetName()..'Text']
         if not text and chatTab.GetFontString then
@@ -259,7 +259,9 @@ DF:NewModule('chat', 1, function()
         end
         if text then
             text:ClearAllPoints()
-            text:SetPoint('CENTER', chatTab, 'CENTER', 0, 1)
+            -- The selected and inactive atlases have different vertical
+            -- padding.  One shared offset makes one of the two look wrong.
+            text:SetPoint('CENTER', chatTab, 'CENTER', 0, isSelected and 1 or -1)
             text:SetJustifyH('CENTER')
             text:SetJustifyV('MIDDLE')
         end
@@ -271,8 +273,8 @@ DF:NewModule('chat', 1, function()
         for i = 1, NUM_CHAT_WINDOWS do
             local tab = _G['ChatFrame'..i..'Tab']
             if tab and tab.auroraSkinned then
-                CenterChatTabText(tab)
                 local isSelected = (SELECTED_DOCK_FRAME and SELECTED_DOCK_FRAME:GetID() == i)
+                CenterChatTabText(tab, isSelected)
                 if isSelected then
                     tab.auroraLeft:Hide()
                     tab.auroraRight:Hide()
@@ -299,8 +301,8 @@ DF:NewModule('chat', 1, function()
             local chatFrame = _G['ChatFrame'..i]
             local chatTab = _G['ChatFrame'..i..'Tab']
             if chatFrame and chatFrame.isDocked and chatTab then
-                CenterChatTabText(chatTab)
                 local isSelected = (SELECTED_DOCK_FRAME and SELECTED_DOCK_FRAME:GetID() == i)
+                CenterChatTabText(chatTab, isSelected)
                 local yOffset = isSelected and 0 or 3
                 local point, relativeTo, relativePoint, x, y = chatTab:GetPoint(1)
                 if y ~= yOffset then
@@ -316,7 +318,8 @@ DF:NewModule('chat', 1, function()
         local tab = _G['ChatFrame'..i..'Tab']
         if tab then
             SkinChatTab(tab)
-            CenterChatTabText(tab)
+            local isSelected = (SELECTED_DOCK_FRAME and SELECTED_DOCK_FRAME:GetID() == i)
+            CenterChatTabText(tab, isSelected)
             -- tab:ClearAllPoints()
             -- tab:SetPoint('BOTTOMLEFT', _G['ChatFrame'..i], 'TOPLEFT', 50, 15)
         end
