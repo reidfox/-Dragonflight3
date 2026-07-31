@@ -147,10 +147,12 @@ function DF.animations.CreateStatusBar(parent, width, height, animConfig, name)
         self.fill:Show()
         local pct = DF.math.clamp(self.val_ / self.max, 0, 1)
         local fillWidth = DF.math.clamp(self:GetWidth() * pct, 0, self:GetWidth())
+        local texTop = self.fillTexCoordTop or 0
+        local texBottom = self.fillTexCoordBottom or 1
         if self.fillDirection == 'RIGHT_TO_LEFT' then
-            self.fill:SetTexCoord(1-pct, 1, 0, 1)
+            self.fill:SetTexCoord(1-pct, 1, texTop, texBottom)
         else
-            self.fill:SetTexCoord(0, pct, 0, 1)
+            self.fill:SetTexCoord(0, pct, texTop, texBottom)
         end
         self.fill:SetWidth(fillWidth)
         self.fill:SetHeight(self:GetHeight())

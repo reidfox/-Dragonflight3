@@ -432,8 +432,12 @@ function setup:SetSimpleBarWrapper(unitFrame, bar, kind, enabled)
     wrapper:Show()
 end
 
-function setup:SetSimpleBarFillOffset(bar, enabled)
+function setup:SetSimpleBarFillOffset(unitFrame, bar, kind, enabled)
     local yOffset = enabled and 3 or 0
+    local cropPlayerPower = enabled and unitFrame.unit == 'player' and kind == 'power'
+
+    bar.fillTexCoordTop = cropPlayerPower and 2/16 or 0
+    bar.fillTexCoordBottom = cropPlayerPower and 14/16 or 1
 
     bar.fill:ClearAllPoints()
     bar.fill:SetPoint('TOPLEFT', bar, 'TOPLEFT', 0, yOffset)
@@ -441,6 +445,7 @@ function setup:SetSimpleBarFillOffset(bar, enabled)
     bar.bg:ClearAllPoints()
     bar.bg:SetPoint('TOPLEFT', bar, 'TOPLEFT', 0, yOffset)
     bar.bg:SetPoint('BOTTOMRIGHT', bar, 'BOTTOMRIGHT', 0, yOffset)
+    bar.bg:SetTexCoord(0, 1, bar.fillTexCoordTop, bar.fillTexCoordBottom)
     bar:Update()
 end
 
@@ -2582,7 +2587,7 @@ function setup:GenerateCallbacks()
                     end
                     portrait.hpBar:SetTextures(tex, tex)
                     setup:SetSimpleBarWrapper(portrait, portrait.hpBar, 'health', value == 'Simple Style')
-                    setup:SetSimpleBarFillOffset(portrait.hpBar, value == 'Simple Style')
+                    setup:SetSimpleBarFillOffset(portrait, portrait.hpBar, 'health', value == 'Simple Style')
                 end
             end
         end
@@ -2647,7 +2652,7 @@ function setup:GenerateCallbacks()
                     portrait.powerBar:SetTextures(tex, tex)
                     setup:SetSimpleBarWrapper(portrait, portrait.powerBar, 'power', value == 'Simple Style')
                     setup:SetSimplePowerBarOffset(portrait, value == 'Simple Style')
-                    setup:SetSimpleBarFillOffset(portrait.powerBar, value == 'Simple Style')
+                    setup:SetSimpleBarFillOffset(portrait, portrait.powerBar, 'power', value == 'Simple Style')
                 end
             end
         end
