@@ -254,25 +254,25 @@ function setup:CreateBagFrame(bagID, numSlots)
         bag.moneyPanel.goldIcon:SetTexture('Interface\\MoneyFrame\\UI-MoneyIcons')
         bag.moneyPanel.goldIcon:SetTexCoord(0, 0.25, 0, 1)
         bag.moneyPanel.goldIcon:SetSize(13, 13)
-        bag.moneyPanel.goldIcon:SetPoint('LEFT', bag.moneyPanel, 'LEFT', 2, 0)
         bag.moneyPanel.gold = bag.moneyPanel:CreateFontString(nil, 'OVERLAY', 'NumberFontNormal')
-        bag.moneyPanel.gold:SetPoint('LEFT', bag.moneyPanel.goldIcon, 'RIGHT', 0, 0)
+        bag.moneyPanel.gold:SetPoint('LEFT', bag.moneyPanel, 'LEFT', 2, 0)
+        bag.moneyPanel.goldIcon:SetPoint('LEFT', bag.moneyPanel.gold, 'RIGHT', 0, 0)
 
         bag.moneyPanel.silverIcon = bag.moneyPanel:CreateTexture(nil, 'ARTWORK')
         bag.moneyPanel.silverIcon:SetTexture('Interface\\MoneyFrame\\UI-MoneyIcons')
         bag.moneyPanel.silverIcon:SetTexCoord(0.25, 0.5, 0, 1)
         bag.moneyPanel.silverIcon:SetSize(13, 13)
-        bag.moneyPanel.silverIcon:SetPoint('LEFT', bag.moneyPanel.gold, 'RIGHT', 2, 0)
         bag.moneyPanel.silver = bag.moneyPanel:CreateFontString(nil, 'OVERLAY', 'NumberFontNormal')
-        bag.moneyPanel.silver:SetPoint('LEFT', bag.moneyPanel.silverIcon, 'RIGHT', 0, 0)
+        bag.moneyPanel.silver:SetPoint('LEFT', bag.moneyPanel.goldIcon, 'RIGHT', 2, 0)
+        bag.moneyPanel.silverIcon:SetPoint('LEFT', bag.moneyPanel.silver, 'RIGHT', 0, 0)
 
         bag.moneyPanel.copperIcon = bag.moneyPanel:CreateTexture(nil, 'ARTWORK')
         bag.moneyPanel.copperIcon:SetTexture('Interface\\MoneyFrame\\UI-MoneyIcons')
         bag.moneyPanel.copperIcon:SetTexCoord(0.5, 0.75, 0, 1)
         bag.moneyPanel.copperIcon:SetSize(13, 13)
-        bag.moneyPanel.copperIcon:SetPoint('LEFT', bag.moneyPanel.silver, 'RIGHT', 2, 0)
         bag.moneyPanel.copper = bag.moneyPanel:CreateFontString(nil, 'OVERLAY', 'NumberFontNormal')
-        bag.moneyPanel.copper:SetPoint('LEFT', bag.moneyPanel.copperIcon, 'RIGHT', 0, 0)
+        bag.moneyPanel.copper:SetPoint('LEFT', bag.moneyPanel.silverIcon, 'RIGHT', 2, 0)
+        bag.moneyPanel.copperIcon:SetPoint('LEFT', bag.moneyPanel.copper, 'RIGHT', 0, 0)
 
         bag.sellBtn = CreateFrame('Button', nil, bag)
         bag.sellBtn:SetSize(17, 17)
@@ -287,7 +287,14 @@ function setup:CreateBagFrame(bagID, numSlots)
         sellHighlight:SetPoint('BOTTOMRIGHT', bag.sellBtn, 'BOTTOMRIGHT', 5, -5)
         sellHighlight:SetTexture(media['tex:bags:sellbtn.blp'])
         sellHighlight:SetBlendMode('ADD')
-        bag.sellBtn:SetScript('OnClick', function() setup:SellGreyItems() end)
+        bag.sellBtn:SetScript('OnClick', function() setup:SortBags() end)
+        bag.sellBtn:SetScript('OnEnter', function()
+            GameTooltip:SetOwner(this, 'ANCHOR_RIGHT')
+            GameTooltip:SetText('Clean bags')
+            GameTooltip:AddLine('Sorts and compacts the items inside each bag.', 1, 1, 1)
+            GameTooltip:Show()
+        end)
+        bag.sellBtn:SetScript('OnLeave', function() GameTooltip:Hide() end)
 
         bag.search:SetScript('OnTextChanged', function()
             local text = this:GetText()
@@ -476,25 +483,25 @@ function setup:CreateOneBag()
     bag.moneyPanel.goldIcon:SetTexture('Interface\\MoneyFrame\\UI-MoneyIcons')
     bag.moneyPanel.goldIcon:SetTexCoord(0, 0.25, 0, 1)
     bag.moneyPanel.goldIcon:SetSize(13, 13)
-    bag.moneyPanel.goldIcon:SetPoint('LEFT', bag.moneyPanel, 'LEFT', 2, 0)
     bag.moneyPanel.gold = bag.moneyPanel:CreateFontString(nil, 'OVERLAY', 'NumberFontNormal')
-    bag.moneyPanel.gold:SetPoint('LEFT', bag.moneyPanel.goldIcon, 'RIGHT', 0, 0)
+    bag.moneyPanel.gold:SetPoint('LEFT', bag.moneyPanel, 'LEFT', 2, 0)
+    bag.moneyPanel.goldIcon:SetPoint('LEFT', bag.moneyPanel.gold, 'RIGHT', 0, 0)
 
     bag.moneyPanel.silverIcon = bag.moneyPanel:CreateTexture(nil, 'ARTWORK')
     bag.moneyPanel.silverIcon:SetTexture('Interface\\MoneyFrame\\UI-MoneyIcons')
     bag.moneyPanel.silverIcon:SetTexCoord(0.25, 0.5, 0, 1)
     bag.moneyPanel.silverIcon:SetSize(13, 13)
-    bag.moneyPanel.silverIcon:SetPoint('LEFT', bag.moneyPanel.gold, 'RIGHT', 2, 0)
     bag.moneyPanel.silver = bag.moneyPanel:CreateFontString(nil, 'OVERLAY', 'NumberFontNormal')
-    bag.moneyPanel.silver:SetPoint('LEFT', bag.moneyPanel.silverIcon, 'RIGHT', 0, 0)
+    bag.moneyPanel.silver:SetPoint('LEFT', bag.moneyPanel.goldIcon, 'RIGHT', 2, 0)
+    bag.moneyPanel.silverIcon:SetPoint('LEFT', bag.moneyPanel.silver, 'RIGHT', 0, 0)
 
     bag.moneyPanel.copperIcon = bag.moneyPanel:CreateTexture(nil, 'ARTWORK')
     bag.moneyPanel.copperIcon:SetTexture('Interface\\MoneyFrame\\UI-MoneyIcons')
     bag.moneyPanel.copperIcon:SetTexCoord(0.5, 0.75, 0, 1)
     bag.moneyPanel.copperIcon:SetSize(13, 13)
-    bag.moneyPanel.copperIcon:SetPoint('LEFT', bag.moneyPanel.silver, 'RIGHT', 2, 0)
     bag.moneyPanel.copper = bag.moneyPanel:CreateFontString(nil, 'OVERLAY', 'NumberFontNormal')
-    bag.moneyPanel.copper:SetPoint('LEFT', bag.moneyPanel.copperIcon, 'RIGHT', 0, 0)
+    bag.moneyPanel.copper:SetPoint('LEFT', bag.moneyPanel.silverIcon, 'RIGHT', 2, 0)
+    bag.moneyPanel.copperIcon:SetPoint('LEFT', bag.moneyPanel.copper, 'RIGHT', 0, 0)
 
     bag.sellBtn = CreateFrame('Button', nil, bag)
     bag.sellBtn:SetSize(17, 17)
@@ -509,7 +516,14 @@ function setup:CreateOneBag()
     sellHighlight:SetPoint('BOTTOMRIGHT', bag.sellBtn, 'BOTTOMRIGHT', 5, -5)
     sellHighlight:SetTexture(media['tex:bags:sellbtn.blp'])
     sellHighlight:SetBlendMode('ADD')
-    bag.sellBtn:SetScript('OnClick', function() setup:SellGreyItems() end)
+    bag.sellBtn:SetScript('OnClick', function() setup:SortBags() end)
+    bag.sellBtn:SetScript('OnEnter', function()
+        GameTooltip:SetOwner(this, 'ANCHOR_RIGHT')
+        GameTooltip:SetText('Clean bags')
+        GameTooltip:AddLine('Sorts and compacts the items inside each bag.', 1, 1, 1)
+        GameTooltip:Show()
+    end)
+    bag.sellBtn:SetScript('OnLeave', function() GameTooltip:Hide() end)
 
     bag.search:SetScript('OnTextChanged', function()
         local text = this:GetText()
@@ -798,6 +812,89 @@ function setup:TruncateText(text, maxWidth, fontString)
         truncated = string.sub(truncated, 1, string.len(truncated) - 1)
         fontString:SetText(truncated..'..')
     end
+end
+
+function setup:GetBagSortData(bag, slot)
+    local link = GetContainerItemLink(bag, slot)
+    if not link then return nil end
+
+    local name, _, quality, itemLevel, _, itemType, itemSubType = GetItemInfo(link)
+    return {
+        name = name or link,
+        quality = quality or 0,
+        itemLevel = itemLevel or 0,
+        itemType = itemType or '',
+        itemSubType = itemSubType or '',
+    }
+end
+
+function setup:BagItemSortsBefore(a, b)
+    if not a then return false end
+    if not b then return true end
+    if a.itemType ~= b.itemType then return a.itemType < b.itemType end
+    if a.itemSubType ~= b.itemSubType then return a.itemSubType < b.itemSubType end
+    if a.quality ~= b.quality then return a.quality > b.quality end
+    if a.itemLevel ~= b.itemLevel then return a.itemLevel > b.itemLevel end
+    return a.name < b.name
+end
+
+function setup:SortBagsStep()
+    local foundLockedSlot = false
+    for bag = 0, 4 do
+        local slots = GetContainerNumSlots(bag) or 0
+        for slot = 1, slots - 1 do
+            local left = self:GetBagSortData(bag, slot)
+            local right = self:GetBagSortData(bag, slot + 1)
+            if self:BagItemSortsBefore(right, left) then
+                local _, _, leftLocked = GetContainerItemInfo(bag, slot)
+                local _, _, rightLocked = GetContainerItemInfo(bag, slot + 1)
+                if leftLocked or rightLocked then
+                    foundLockedSlot = true
+                else
+                    ClearCursor()
+                    PickupContainerItem(bag, slot + 1)
+                    PickupContainerItem(bag, slot)
+                    if CursorHasItem() then PickupContainerItem(bag, slot + 1) end
+                    if CursorHasItem() then ClearCursor() end
+                    self.sortStarted = GetTime()
+                    return true
+                end
+            end
+        end
+    end
+    return foundLockedSlot
+end
+
+function setup:SortBags()
+    if self.sortActive then return end
+    if CursorHasItem() then
+        DEFAULT_CHAT_FRAME:AddMessage('Clean bags: clear the cursor first')
+        return
+    end
+
+    if not self.sortFrame then
+        self.sortFrame = CreateFrame('Frame')
+        self.sortFrame.elapsed = 0
+        self.sortFrame:SetScript('OnUpdate', function()
+            if not setup.sortActive then return end
+            this.elapsed = this.elapsed + arg1
+            if this.elapsed < 0.1 then return end
+            this.elapsed = 0
+            if GetTime() - setup.sortStarted > 15 then
+                setup.sortActive = false
+                DEFAULT_CHAT_FRAME:AddMessage('Clean bags paused because an item stayed locked')
+                return
+            end
+            if not setup:SortBagsStep() then
+                setup.sortActive = false
+                DEFAULT_CHAT_FRAME:AddMessage('Bags cleaned and sorted')
+            end
+        end)
+    end
+
+    self.sortFrame.elapsed = 0
+    self.sortStarted = GetTime()
+    self.sortActive = true
 end
 
 function setup:SellGreyItems()

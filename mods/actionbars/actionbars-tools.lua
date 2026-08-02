@@ -61,6 +61,7 @@ local setup = {
         reforgedHighlight = media['tex:actionbars:uiactionbariconframehighlight.tga'],
         bgAlly = media['tex:actionbars:btn_bg_ally.blp'],
         bgHorde = media['tex:actionbars:btn_bg_horde.blp'],
+        bgDefault = 'Interface\\Buttons\\UI-Quickslot',
         equippedBorderEdge = 'Interface\\Buttons\\White8x8',
         flash = 'Interface\\Buttons\\White8x8',
         wyvern = media['tex:actionbars:WyvernNew.tga'],

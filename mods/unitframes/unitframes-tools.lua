@@ -58,6 +58,26 @@ local setup = {
     },
 }
 
+function setup:SetUnitTooltip(unitFrame, enabled)
+    if not enabled then
+        unitFrame:SetScript('OnEnter', nil)
+        unitFrame:SetScript('OnLeave', nil)
+        return
+    end
+
+    unitFrame:SetScript('OnEnter', function()
+        if not UnitExists(this.unit) then return end
+        GameTooltip_SetDefaultAnchor(GameTooltip, this)
+        GameTooltip:SetUnit(this.unit)
+        local r, g, b = GameTooltip_UnitColor(this.unit)
+        GameTooltipTextLeft1:SetTextColor(r, g, b)
+        GameTooltip:Show()
+    end)
+    unitFrame:SetScript('OnLeave', function()
+        GameTooltip:Hide()
+    end)
+end
+
 -- create
 function setup:CreateUnitFrame(unit, width, height)
     local frameName = 'DF_'..string.gsub(unit, '^%l', string.upper)..'Frame'
@@ -132,24 +152,13 @@ function setup:CreateUnitFrame(unit, width, height)
         end
     end)
 
-    if unit == 'player' then
-        unitFrame:SetScript('OnEnter', function()
-            GameTooltip_SetDefaultAnchor(GameTooltip, this)
-            GameTooltip_AddNewbieTip(PARTY_OPTIONS_LABEL, 1.0, 1.0, 1.0, NEWBIE_TOOLTIP_PARTYOPTIONS)
-        end)
-        unitFrame:SetScript('OnLeave', function()
-            GameTooltip:Hide()
-        end)
-    elseif unit == 'target' then
-        unitFrame:SetScript('OnEnter', function()
-            GameTooltip_SetDefaultAnchor(GameTooltip, this)
-            GameTooltip:SetUnit(this.unit)
-            local r, g, b = GameTooltip_UnitColor(this.unit)
-            GameTooltipTextLeft1:SetTextColor(r, g, b)
-        end)
-        unitFrame:SetScript('OnLeave', function()
-            GameTooltip:Hide()
-        end)
+    if unit == 'player' or unit == 'target' then
+        self:SetUnitTooltip(unitFrame, true)
+    elseif string.find(unit, 'party') then
+        if DF.profile['unitframes']['partyShowTooltips'] == nil then
+            DF.profile['unitframes']['partyShowTooltips'] = true
+        end
+        self:SetUnitTooltip(unitFrame, DF.profile['unitframes']['partyShowTooltips'])
     end
 
     unitFrame.hpBar = DF.animations.CreateStatusBar(unitFrame, 120, 20, nil, frameName..'.hpBar')
@@ -2005,6 +2014,9 @@ function setup:GenerateDefaults()
         if hasNameReactionColoring then
             defaults[frame.key..'NameReactionColoring'] = {value = false, metadata = {element = 'checkbox', category = catGeneral, indexInCategory = 17, description = 'Use reaction coloring for name', dependency = {key = frame.key..'Enabled', state = true}}}
         end
+        if frame.key == 'party' then
+            defaults.partyShowTooltips = {value = true, metadata = {element = 'checkbox', category = catGeneral, indexInCategory = 18, description = 'Show character tooltips on mouseover', dependency = {key = 'partyEnabled', state = true}}}
+        end
         defaults[frame.key..'ManaBarWidth'] = {value = 120, metadata = {element = 'slider', category = catPowerBar, indexInCategory = 1, description = 'Power bar width', min = 60, max = 300, step = 1, dependency = {key = frame.key..'Enabled', state = true}}}
         defaults[frame.key..'ManaBarHeight'] = {value = 12, metadata = {element = 'slider', category = catPowerBar, indexInCategory = 2, description = 'Power bar height', min = 6, max = 30, step = 1, dependency = {key = frame.key..'Enabled', state = true}}}
         defaults[frame.key..'ManaBarTexture'] = {value = manaBarTexture, metadata = {element = 'dropdown', category = catPowerBar, indexInCategory = 3, description = 'Power bar texture', options = {'aurora_hpbar', 'aurora_hpbar_sharp', 'aurora_hpbar_reversed', 'aurora_hpbar_sharp_reversed', 'Simple Style', 'white8x8'}, dependency = {key = frame.key..'Enabled', state = true}}}
@@ -2165,6 +2177,16 @@ function setup:GenerateCallbacks()
                 local portrait = setup.portraits[j]
                 if (frame.key == 'party' and string.find(portrait.unit, 'party')) or portrait.unit == frame.key then
                     if value then portrait.name:Show() else portrait.name:Hide() end
+                end
+            end
+        end
+        if frame.key == 'party' then
+            callbacks.partyShowTooltips = function(value)
+                for j = 1, table.getn(setup.portraits) do
+                    local portrait = setup.portraits[j]
+                    if string.find(portrait.unit, 'party') then
+                        setup:SetUnitTooltip(portrait, value)
+                    end
                 end
             end
         end

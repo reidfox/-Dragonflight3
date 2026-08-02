@@ -25,8 +25,9 @@ defaults.showUnusableItems = {value = 'none', metadata = {element = 'dropdown', 
 
 defaults.searchMode = {value = true, metadata = {element = 'checkbox', category = catBehavior, indexInCategory = 1, description = 'Show search box'}}
 defaults.searchClearOnEscape = {value = true, metadata = {element = 'checkbox', category = catBehavior, indexInCategory = 2, description = 'Clear search text on escape', dependency = {key = 'searchMode', state = true}}}
-defaults.repairButton = {value = false, metadata = {element = 'checkbox', category = catBehavior, indexInCategory = 3, description = 'Show repair button in bag'}}
-defaults.autoSellGrey = {value = false, metadata = {element = 'checkbox', category = catBehavior, indexInCategory = 4, description = 'Auto-sell grey items at merchant'}}
+defaults.showSortButton = {value = true, metadata = {element = 'checkbox', category = catBehavior, indexInCategory = 3, description = 'Show clean/sort bag button'}}
+defaults.repairButton = {value = false, metadata = {element = 'checkbox', category = catBehavior, indexInCategory = 4, description = 'Auto-repair items at merchant'}}
+defaults.autoSellGrey = {value = false, metadata = {element = 'checkbox', category = catBehavior, indexInCategory = 5, description = 'Auto-sell grey items at merchant'}}
 
 defaults.backgroundAlpha = {value = 1, metadata = {element = 'slider', category = catAppearance, indexInCategory = 1, description = 'Background transparency', min = 0, max = 1, stepSize = 0.05}}
 defaults.slotAlpha = {value = 1, metadata = {element = 'slider', category = catAppearance, indexInCategory = 2, description = 'Slot button transparency', min = 0, max = 1, stepSize = 0.05}}
@@ -42,6 +43,9 @@ DF:NewDefaults('bags', defaults)
 
 DF:NewModule('bags', 1, 'PLAYER_AFTER_ENTERING_WORLD', function()
     local setup = DF.setups.bags
+    if DF.profile['bags']['showSortButton'] == nil then
+        DF.profile['bags']['showSortButton'] = true
+    end
     local bag0, bag1, bag2, bag3, bag4 = setup:InitializeBags()
     local oneBag = setup:InitializeOneBag()
     local bank5, bank6, bank7, bank8, bank9, bank10 = setup:InitializeBankBags()
@@ -640,14 +644,17 @@ DF:NewModule('bags', 1, 'PLAYER_AFTER_ENTERING_WORLD', function()
     callbacks.repairButton = function(value)
     end
 
-    callbacks.autoSellGrey = function(value)
-        setup.autoSellEnabled = value
+    callbacks.showSortButton = function(value)
         if bag0 and bag0.sellBtn then
             if value then bag0.sellBtn:Show() else bag0.sellBtn:Hide() end
         end
         if oneBag and oneBag.sellBtn then
             if value then oneBag.sellBtn:Show() else oneBag.sellBtn:Hide() end
         end
+    end
+
+    callbacks.autoSellGrey = function(value)
+        setup.autoSellEnabled = value
     end
 
     callbacks.oneBagMoveMode = function(value)

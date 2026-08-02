@@ -175,7 +175,7 @@ for i = 1, table.getn(barConfigs) do
     defaults[bar.name..'DecorationY'] = {value = 0, metadata = {element = 'slider', category = catDecorations, indexInCategory = 8, description = 'Vertical position offset for decorations', min = -60, max = 60, stepSize = 1, dependency = {key = bar.name..'Enabled', state = true}}}
 
     if hasBgTexture then
-        defaults[bar.name..'BgTexture'] = {value = 'alliance', metadata = {element = 'dropdown', category = catAppearance, indexInCategory = 1, description = 'Button background texture', options = {'alliance', 'horde'}, dependency = {key = bar.name..'Enabled', state = true}}}
+        defaults[bar.name..'BgTexture'] = {value = 'alliance', metadata = {element = 'dropdown', category = catAppearance, indexInCategory = 1, description = 'Button background texture', options = {'alliance', 'horde', 'default'}, dependency = {key = bar.name..'Enabled', state = true}}}
     end
 
     defaults[bar.name..'BorderColour'] = {value = {1, 1, 1, 1}, metadata = {element = 'colorpicker', category = catAppearance, indexInCategory = 2, description = 'Button border color', dependency = {key = bar.name..'Enabled', state = true}}}
@@ -1146,7 +1146,12 @@ DF:NewModule('actionbars', 1, 'PLAYER_LOGIN', function()
 
         if barName ~= 'stanceBar' then
             callbacks[barName..'BgTexture'] = function(value)
-                local texPath = value == 'alliance' and setup.textures.bgAlly or setup.textures.bgHorde
+                local texPath = setup.textures.bgDefault
+                if value == 'alliance' then
+                    texPath = setup.textures.bgAlly
+                elseif value == 'horde' then
+                    texPath = setup.textures.bgHorde
+                end
                 for i = 1, table.getn(barFrame.buttons) do
                     if barFrame.buttons[i].factionBg then
                         barFrame.buttons[i].factionBg:SetTexture(texPath)
