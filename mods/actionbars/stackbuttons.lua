@@ -362,8 +362,12 @@ DF:NewModule('stackbuttons', 2, 'PLAYER_LOGIN', function()
                             btn.icon:SetTexture(tex)
                             -- Bonus: Update count if exists (mirrors RefreshData)
                             if btn.countText then
-                                local _, count = GetContainerItemInfo(btn.bagID, btn.slotID)
-                                btn.countText:SetText(count > 1 and count or '')
+                                if btn.bagID and btn.slotID then
+                                    local _, count = GetContainerItemInfo(btn.bagID, btn.slotID)
+                                    btn.countText:SetText(count and count > 1 and count or '')
+                                else
+                                    btn.countText:SetText('')
+                                end
                             end
                         end
                     end

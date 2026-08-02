@@ -487,7 +487,7 @@ function setup:SetSimpleTargetTargetNameOffset(unitFrame, enabled)
 end
 
 function setup:GetSimpleHealthTexture(unitFrame)
-    if unitFrame.unit == 'player' or unitFrame.unit == 'target' then
+    if unitFrame.unit == 'player' or unitFrame.unit == 'target' or string.find(unitFrame.unit, 'party') then
         return self.textures.reforgedHealth
     end
     return self.textures.reforgedMiniHealth
@@ -496,7 +496,7 @@ end
 function setup:GetSimplePowerTexture(unitFrame)
     if unitFrame.unit == 'player' then
         return self.textures.reforgedPlayerPower
-    elseif unitFrame.unit == 'target' then
+    elseif unitFrame.unit == 'target' or string.find(unitFrame.unit, 'party') then
         return self.textures.reforgedTargetPower
     end
     return self.textures.reforgedMiniPower
@@ -2330,16 +2330,34 @@ function setup:GenerateCallbacks()
             end
         end
         callbacks[frame.key..'Scale'] = function(value)
+            -- Party frames are chained together. Capture every screen position
+            -- before changing any scale, otherwise scaling one frame moves the
+            -- next frame before its own position can be measured.
+            local savedPositions = {}
+            if frame.key == 'party' then
+                for j = 1, table.getn(setup.portraits) do
+                    local portrait = setup.portraits[j]
+                    if string.find(portrait.unit, 'party') then
+                        savedPositions[portrait] = {
+                            left = portrait:GetLeft(),
+                            top = portrait:GetTop(),
+                            scale = portrait:GetScale(),
+                        }
+                    end
+                end
+            end
+
             for j = 1, table.getn(setup.portraits) do
                 local portrait = setup.portraits[j]
                 if (frame.key == 'party' and string.find(portrait.unit, 'party')) or portrait.unit == frame.key then
-                    if portrait.unit == 'targettarget' then
+                    if portrait.unit == 'targettarget' or string.find(portrait.unit, 'party') then
                         -- GetLeft/GetTop are expressed in the frame's current
                         -- scale. Re-anchor in the new scale so moving the slider
                         -- changes size without changing its on-screen position.
-                        local oldScale = portrait:GetScale()
-                        local left = portrait:GetLeft()
-                        local top = portrait:GetTop()
+                        local saved = savedPositions[portrait]
+                        local oldScale = saved and saved.scale or portrait:GetScale()
+                        local left = saved and saved.left or portrait:GetLeft()
+                        local top = saved and saved.top or portrait:GetTop()
                         portrait:SetScale(value)
                         if left and top and oldScale and value > 0 then
                             local newLeft = left * oldScale / value
