@@ -35,47 +35,57 @@ DF:NewModule('UIParent', 2, function()
     -- callbacks
     local callbacks = {}
 
+    local function SetAlpha(value, frame)
+        if frame then
+            frame:SetAlpha(value)
+        end
+    end
+
     callbacks.characterBgAlpha = function(value)
-        if DF.setups and DF.setups.characterBg then
-            DF.setups.characterBg:SetAlpha(value)
+        if DF.setups then
+            SetAlpha(value, DF.setups.characterBg)
+            SetAlpha(value, DF.setups.characterBgTexture)
         end
     end
 
     callbacks.questlogBgAlpha = function(value)
         if DF.setups then
-            if DF.setups.questlogBg then DF.setups.questlogBg:SetAlpha(value) end
-            if DF.setups.questlogTopWood then DF.setups.questlogTopWood:SetAlpha(value) end
-            if DF.setups.questlogLeftBg then DF.setups.questlogLeftBg:SetAlpha(value) end
-            if DF.setups.questlogRightBg then DF.setups.questlogRightBg:SetAlpha(value) end
-            if DF.setups.questlogBookmark then DF.setups.questlogBookmark:SetAlpha(value) end
+            SetAlpha(value, DF.setups.questlogBg)
+            SetAlpha(value, DF.setups.questlogTopWood)
+            SetAlpha(value, DF.setups.questlogLeftBg)
+            SetAlpha(value, DF.setups.questlogRightBg)
+            SetAlpha(value, DF.setups.questlogBookmark)
         end
     end
 
     callbacks.socialBgAlpha = function(value)
-        if DF.setups and DF.setups.socialBg then
-            DF.setups.socialBg:SetAlpha(value)
+        if DF.setups then
+            SetAlpha(value, DF.setups.socialBg)
+            SetAlpha(value, DF.setups.socialFriendsBg)
+            SetAlpha(value, DF.setups.socialWhoBg)
         end
     end
 
     callbacks.helpBgAlpha = function(value)
-        if DF.setups and DF.setups.helpBg then
-            DF.setups.helpBg:SetAlpha(value)
+        if DF.setups then
+            SetAlpha(value, DF.setups.helpBg)
+            SetAlpha(value, DF.setups.helpInnerBg)
         end
     end
 
     callbacks.gamemenuBgAlpha = function(value)
-        if DF.setups and DF.setups.gamemenuBg then
-            DF.setups.gamemenuBg:SetAlpha(value)
+        if DF.setups then
+            SetAlpha(value, DF.setups.gamemenuBg)
         end
     end
 
     callbacks.spellbookBgAlpha = function(value)
         if DF.setups then
-            if DF.setups.spellbookBg then DF.setups.spellbookBg:SetAlpha(value) end
-            if DF.setups.spellbookLeftPage then DF.setups.spellbookLeftPage:SetAlpha(value) end
-            if DF.setups.spellbookRightPage then DF.setups.spellbookRightPage:SetAlpha(value) end
-            if DF.setups.spellbookTopWood then DF.setups.spellbookTopWood:SetAlpha(value) end
-            if DF.setups.spellbookBookmark then DF.setups.spellbookBookmark:SetAlpha(value) end
+            SetAlpha(value, DF.setups.spellbookBg)
+            SetAlpha(value, DF.setups.spellbookLeftPage)
+            SetAlpha(value, DF.setups.spellbookRightPage)
+            SetAlpha(value, DF.setups.spellbookTopWood)
+            SetAlpha(value, DF.setups.spellbookBookmark)
         end
     end
 
@@ -97,14 +107,14 @@ DF:NewModule('UIParent', 2, function()
     end
 
     callbacks.keybindingBgAlpha = function(value)
-        if DF.setups and DF.setups.keybindingBg then
-            DF.setups.keybindingBg:SetAlpha(value)
+        if DF.setups then
+            SetAlpha(value, DF.setups.keybindingBg)
         end
     end
 
     callbacks.macroBgAlpha = function(value)
-        if DF.setups and DF.setups.macroBg then
-            DF.setups.macroBg:SetAlpha(value)
+        if DF.setups then
+            SetAlpha(value, DF.setups.macroBg)
         end
     end
 

@@ -29,6 +29,7 @@ DF:NewModule('help', 1, function()
     helpBg:SetPoint('TOPLEFT', customBg, 'TOPLEFT', 3, -20)
     helpBg:SetPoint('BOTTOMRIGHT', customBg, 'BOTTOMRIGHT', -3, 3)
     helpBg:SetVertexColor(0, 0, 0, .3)
+    DF.setups.helpInnerBg = helpBg
 
     local title = customBg:CreateFontString(nil, 'OVERLAY', 'GameFontHighlight')
     title:SetPoint('TOP', customBg, 'TOP', 0, -6)

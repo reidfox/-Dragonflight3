@@ -45,6 +45,7 @@ DF:NewModule('socialframe', 1, 'PLAYER_ENTERING_WORLD', function()
     friendsBg:SetPoint('BOTTOMRIGHT', customBg, 'BOTTOMRIGHT', -8, 55)
     friendsBg:SetVertexColor(0, 0, 0, .3)
     friendsBg:Hide()
+    DF.setups.socialFriendsBg = friendsBg
 
     local whoBg = WhoFrameEditBox:CreateTexture(nil, 'BACKGROUND')
     whoBg:SetTexture('Interface\\Buttons\\WHITE8X8')
@@ -52,6 +53,7 @@ DF:NewModule('socialframe', 1, 'PLAYER_ENTERING_WORLD', function()
     whoBg:SetPoint('BOTTOMRIGHT', WhoFrameEditBox, 'BOTTOMRIGHT', 15, 5)
     whoBg:SetVertexColor(0, 0, 0, .5)
     whoBg:Hide()
+    DF.setups.socialWhoBg = whoBg
 
     local title = customBg:CreateFontString(nil, 'OVERLAY', 'GameFontHighlight')
     title:SetPoint('TOP', customBg, 'TOP', 0, -6)
