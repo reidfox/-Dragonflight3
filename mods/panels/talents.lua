@@ -234,8 +234,10 @@ DF:NewModule('talents', 1, function() -- TODO: needs total rewrite
 
         button:SetScript('OnClick', function()
             if IsShiftKeyDown() then
-                local talentName = GetTalentInfo(this.tabIndex, this.talentIndex)
-                DF.common.InsertChatLink(DF.common.GetTalentLink(this.tabIndex, this.talentIndex), talentName)
+                -- Turtle WoW implements talent linking inside LearnTalent itself.
+                -- The stock talent frame calls this function for shift-clicks too;
+                -- bypassing it here reduced the link to plain text.
+                LearnTalent(this.tabIndex, this.talentIndex)
                 return
             end
 
