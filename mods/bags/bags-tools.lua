@@ -1085,6 +1085,10 @@ function setup:GetBagSortFamily(bag)
     return 0
 end
 
+function setup:GetBagSortSlotKey(bag, slot)
+    return tostring(bag)..':'..tostring(slot)
+end
+
 function setup:GetBagSortGroups()
     local groups = {}
     local groupOrder = {}
@@ -1096,7 +1100,10 @@ function setup:GetBagSortGroups()
             table.insert(groupOrder, family)
         end
         for slot = 1, slots do
-            table.insert(groups[family], {bag = bag, slot = slot})
+            local slotKey = self:GetBagSortSlotKey(bag, slot)
+            if not self.sortFixedSlots or not self.sortFixedSlots[slotKey] then
+                table.insert(groups[family], {bag = bag, slot = slot})
+            end
         end
     end
     return groups, groupOrder
@@ -1139,14 +1146,25 @@ function setup:SortBagsStep()
                     else
                         ClearCursor()
                         PickupContainerItem(source.bag, source.slot)
+                        if not CursorHasItem() then
+                            self.sortFixedSlots[self:GetBagSortSlotKey(source.bag, source.slot)] = true
+                            self.sortSkippedLockedItems = true
+                            self.sortStarted = GetTime()
+                            return true
+                        end
+
                         PickupContainerItem(target.bag, target.slot)
                         if CursorHasItem() then PickupContainerItem(source.bag, source.slot) end
                         if CursorHasItem() then ClearCursor() end
                         if GetContainerItemLink(target.bag, target.slot) == desiredLink then
                             self.sortStarted = GetTime()
                             return true
+                        else
+                            self.sortFixedSlots[self:GetBagSortSlotKey(source.bag, source.slot)] = true
+                            self.sortSkippedLockedItems = true
+                            self.sortStarted = GetTime()
+                            return true
                         end
-                        foundLockedSlot = true
                     end
                 elseif desiredLink then
                     foundLockedSlot = true
@@ -1164,6 +1182,19 @@ function setup:SortBags()
         return
     end
 
+    self.sortFixedSlots = {}
+    self.sortSkippedLockedItems = false
+    for bag = 0, 4 do
+        local slots = GetContainerNumSlots(bag) or 0
+        for slot = 1, slots do
+            local _, _, locked = GetContainerItemInfo(bag, slot)
+            if locked and GetContainerItemLink(bag, slot) then
+                self.sortFixedSlots[self:GetBagSortSlotKey(bag, slot)] = true
+                self.sortSkippedLockedItems = true
+            end
+        end
+    end
+
     if not self.sortFrame then
         self.sortFrame = CreateFrame('Frame')
         self.sortFrame.elapsed = 0
@@ -1179,7 +1210,11 @@ function setup:SortBags()
             end
             if not setup:SortBagsStep() then
                 setup.sortActive = false
-                DEFAULT_CHAT_FRAME:AddMessage('Bags cleaned, grouped, and compacted')
+                if setup.sortSkippedLockedItems then
+                    DEFAULT_CHAT_FRAME:AddMessage('Bags cleaned; locked items were left in place')
+                else
+                    DEFAULT_CHAT_FRAME:AddMessage('Bags cleaned, grouped, and compacted')
+                end
             end
         end)
     end

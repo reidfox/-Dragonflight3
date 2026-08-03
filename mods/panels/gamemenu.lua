@@ -32,6 +32,31 @@ DF:NewModule('gamemenu', 1, function()
         return true
     end
 
+    local function OpenTurtleShop()
+        if SlashCmdList then
+            for commandName, callback in pairs(SlashCmdList) do
+                if type(callback) == 'function' then
+                    local slashName = 'SLASH_'..string.upper(tostring(commandName))
+                    for index = 1, 10 do
+                        local registeredCommand = getglobal(slashName..index)
+                        if not registeredCommand then break end
+                        if string.lower(registeredCommand) == '/shop' then
+                            local ok = pcall(callback, '')
+                            if ok then return true end
+                        end
+                    end
+                end
+            end
+        end
+
+        local shopFrame = getglobal('ShopFrame')
+        if shopFrame then
+            shopFrame:Show()
+            return true
+        end
+        return false
+    end
+
     local frame = DF.ui.CreatePaperDollFrame('DF_GameMenuFrame', UIParent, 225, 480, 3)
     frame:SetPoint('CENTER', 0, 0)
     frame:Hide()
@@ -95,6 +120,16 @@ DF:NewModule('gamemenu', 1, function()
             ShowUIPanel(UIOptionsFrame)
         elseif SoundOptionsFrame then
             ShowUIPanel(SoundOptionsFrame)
+        end
+    end)
+    yOffset = yOffset - buttonHeight - buttonSpacing
+
+    local shopBtn = DF.ui.Button(frame, 'Donation Shop', 160, buttonHeight)
+    shopBtn:SetPoint('TOP', frame, 'TOP', 0, yOffset)
+    shopBtn:SetScript('OnClick', function()
+        frame:Hide()
+        if not OpenTurtleShop() then
+            DEFAULT_CHAT_FRAME:AddMessage('Donation Shop is not available on this client.')
         end
     end)
     yOffset = yOffset - buttonHeight - buttonSpacing * emptySpacing
