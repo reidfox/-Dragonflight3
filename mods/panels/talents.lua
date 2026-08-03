@@ -187,6 +187,42 @@ DF:NewModule('talents', 1, function() -- TODO: needs total rewrite
         end
     end
 
+    local function ClickStockTalentButton(tabIndex, talentIndex)
+        if TalentFrame_LoadUI then pcall(TalentFrame_LoadUI) end
+
+        local stockFrame = getglobal('TalentFrame')
+        local stockButton = getglobal('TalentFrameTalent' .. talentIndex)
+        if not stockFrame or not stockButton or not stockButton.Click then
+            redprint('Native talent button is unavailable.')
+            return false
+        end
+
+        local selectedTab = PanelTemplates_GetSelectedTab(stockFrame)
+        local switchedTabs = selectedTab ~= tabIndex
+        if switchedTabs then
+            PanelTemplates_SetTab(stockFrame, tabIndex)
+            if TalentFrame_Update then TalentFrame_Update() end
+        end
+
+        -- A real Button:Click supplies Turtle's handler with the stock button
+        -- as `this`. Calling that handler with a fabricated `this` can corrupt
+        -- the talent panel state, which was the source of the earlier lock-up.
+        local ok, err = pcall(function()
+            stockButton:Click()
+        end)
+
+        if switchedTabs and selectedTab then
+            PanelTemplates_SetTab(stockFrame, selectedTab)
+            if TalentFrame_Update then TalentFrame_Update() end
+        end
+
+        if not ok then
+            redprint('Could not link talent: ' .. tostring(err))
+            return false
+        end
+        return true
+    end
+
     local function CreateTalentButton(tabIndex, talentIndex, tier, column)
         local treeFrame = treeFrames[tabIndex].frame
         local button = CreateFrame('Button', nil, treeFrame)
@@ -234,10 +270,7 @@ DF:NewModule('talents', 1, function() -- TODO: needs total rewrite
 
         button:SetScript('OnClick', function()
             if IsShiftKeyDown() then
-                -- Turtle WoW implements talent linking inside LearnTalent itself.
-                -- The stock talent frame calls this function for shift-clicks too;
-                -- bypassing it here reduced the link to plain text.
-                LearnTalent(this.tabIndex, this.talentIndex)
+                ClickStockTalentButton(this.tabIndex, this.talentIndex)
                 return
             end
 
