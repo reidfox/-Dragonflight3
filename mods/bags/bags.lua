@@ -216,9 +216,13 @@ DF:NewModule('bags', 1, 'PLAYER_AFTER_ENTERING_WORLD', function()
 
     local initFrame = CreateFrame('Frame')
     initFrame:RegisterEvent('BAG_UPDATE')
+    initFrame:RegisterEvent('UNIT_INVENTORY_CHANGED')
     initFrame:RegisterEvent('PLAYERBANKBAGSLOTS_CHANGED')
     initFrame:RegisterEvent('BANKFRAME_OPENED')
     initFrame:SetScript('OnEvent', function()
+        if event == 'BAG_UPDATE' or (event == 'UNIT_INVENTORY_CHANGED' and arg1 == 'player') then
+            this.bagCapacityCheckAt = GetTime() + 0.15
+        end
         if event == 'BAG_UPDATE' then
             if arg1 >= 1 and arg1 <= 4 and not setup[arg1] then
                 local slots = GetContainerNumSlots(arg1)
@@ -339,6 +343,14 @@ DF:NewModule('bags', 1, 'PLAYER_AFTER_ENTERING_WORLD', function()
                     setup[i]:Hide()
                     setup[i] = nil
                 end
+            end
+        end
+    end)
+    initFrame:SetScript('OnUpdate', function()
+        if this.bagCapacityCheckAt and GetTime() >= this.bagCapacityCheckAt then
+            this.bagCapacityCheckAt = nil
+            if setup:BagCapacitiesChanged() then
+                setup:RefreshBagCapacities()
             end
         end
     end)

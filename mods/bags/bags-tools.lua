@@ -8,6 +8,21 @@ local setup = {
         border = media['tex:actionbars:btn_border.blp'],
         highlight = media['tex:actionbars:btn_highlight_strong.blp'],
         bgTexture = media['tex:actionbars:HDActionBarBtn.tga']
+    },
+
+    sortCategoryOrder = {
+        ['Weapon'] = 1,
+        ['Armor'] = 2,
+        ['Consumable'] = 3,
+        ['Reagent'] = 4,
+        ['Trade Goods'] = 5,
+        ['Projectile'] = 6,
+        ['Quiver'] = 7,
+        ['Recipe'] = 8,
+        ['Quest'] = 9,
+        ['Key'] = 10,
+        ['Container'] = 11,
+        ['Miscellaneous'] = 12,
     }
 }
 
@@ -291,7 +306,7 @@ function setup:CreateBagFrame(bagID, numSlots)
         bag.sellBtn:SetScript('OnEnter', function()
             GameTooltip:SetOwner(this, 'ANCHOR_RIGHT')
             GameTooltip:SetText('Clean bags')
-            GameTooltip:AddLine('Sorts and compacts the items inside each bag.', 1, 1, 1)
+            GameTooltip:AddLine('Groups similar items and compacts them into the nearest bag slots.', 1, 1, 1)
             GameTooltip:Show()
         end)
         bag.sellBtn:SetScript('OnLeave', function() GameTooltip:Hide() end)
@@ -520,7 +535,7 @@ function setup:CreateOneBag()
     bag.sellBtn:SetScript('OnEnter', function()
         GameTooltip:SetOwner(this, 'ANCHOR_RIGHT')
         GameTooltip:SetText('Clean bags')
-        GameTooltip:AddLine('Sorts and compacts the items inside each bag.', 1, 1, 1)
+        GameTooltip:AddLine('Groups similar items and compacts them into the nearest bag slots.', 1, 1, 1)
         GameTooltip:Show()
     end)
     bag.sellBtn:SetScript('OnLeave', function() GameTooltip:Hide() end)
@@ -617,6 +632,214 @@ function setup:CreateOneBag()
 
     self.unified = bag
     return bag
+end
+
+function setup:ApplyBagProfile(bag)
+    local p = DF_Profiles and DF.profile['bags']
+    if not bag or not p then return end
+
+    bag:SetScale(p['bagScale'] or 0.75)
+    if bag.Bg then
+        bag.Bg:SetAlpha(p['backgroundAlpha'] or 1)
+        local colour = p['backgroundColour'] or {1, 1, 1, 1}
+        bag.Bg:SetVertexColor(colour[1], colour[2], colour[3], colour[4])
+    end
+    if bag.edges then
+        local colour = p['frameColour'] or {1, 1, 1, 1}
+        for _, edge in pairs(bag.edges) do
+            edge:SetVertexColor(colour[1], colour[2], colour[3], colour[4])
+        end
+    end
+
+    for _, btn in pairs(bag.slots or {}) do
+        btn:SetAlpha(p['slotAlpha'] or 1)
+        if btn.highlightTex then
+            local colour = p['highlightColour'] or {1, 1, 1, 1}
+            btn.highlightTex:SetVertexColor(colour[1], colour[2], colour[3], colour[4])
+        end
+        if btn.border then
+            local borderTex = btn.border:GetRegions()
+            if borderTex then
+                local colour = p['borderColour'] or {1, 1, 1, 1}
+                borderTex:SetVertexColor(colour[1], colour[2], colour[3], colour[4])
+            end
+        end
+        local overlayAlpha = p['overlayAlpha'] or 1
+        if btn.unusableBorder then btn.unusableBorder:SetAlpha(overlayAlpha) end
+        if btn.qualityBorder then btn.qualityBorder:SetAlpha(overlayAlpha) end
+        if btn.checked then btn.checked:SetAlpha(overlayAlpha) end
+    end
+end
+
+function setup:RefreshBagDecorations(bag)
+    if not self.helpers then
+        self:ApplyBagProfile(bag)
+        return
+    end
+
+    self.helpers.CreateQualityBorders()
+    self:ApplyBagProfile(bag)
+    local p = DF_Profiles and DF.profile['bags']
+    if not p then return end
+    if p['showItemRarity'] then self.helpers.UpdateQualityBorders(true) end
+    if p['showQuestItems'] then self.helpers.ProcessQuestIcons(bag.slots, true) end
+    if p['showUnusableItems'] and p['showUnusableItems'] ~= 'none' then
+        self:UpdateUnusableItems(bag)
+    end
+end
+
+function setup:ResizeBagFrame(bag, numSlots)
+    if not bag then return end
+
+    local bagID = bag:GetID()
+    local cols = 4
+    local buttonSize = 37
+    local spacing = 4
+    local rows = math.ceil(numSlots / cols)
+    local frameName = bag:GetName()
+
+    bag.slotButtons = bag.slotButtons or {}
+    for _, btn in pairs(bag.slots or {}) do
+        bag.slotButtons[btn.slotID or btn:GetID()] = btn
+    end
+    for _, btn in pairs(bag.slotButtons) do btn:Hide() end
+
+    bag.slots = {}
+    for slotID = numSlots, 1, -1 do
+        local displayIndex = numSlots - slotID
+        local col = math.mod(displayIndex, cols)
+        local row = math.floor(displayIndex / cols)
+        local btn = bag.slotButtons[slotID]
+        if not btn then
+            btn = self:CreateSlotButton(bag, frameName, slotID, bagID, buttonSize, spacing, col, row)
+            bag.slotButtons[slotID] = btn
+        else
+            btn:ClearAllPoints()
+            btn:SetPoint('BOTTOMRIGHT', bag, 'BOTTOMRIGHT', -10 - (col * (buttonSize + spacing)), 10 + (row * (buttonSize + spacing)))
+        end
+        btn:SetID(slotID)
+        btn.bagID = bagID
+        btn.slotID = slotID
+        btn:Show()
+        table.insert(bag.slots, btn)
+    end
+
+    bag.numSlots = numSlots
+    bag:SetHeight((bagID == 0 and 100 or 70) + (rows * (buttonSize + spacing)))
+    if bag.portrait and bagID > 0 then SetBagPortaitTexture(bag.portrait, bagID) end
+    if bag.title and bagID > 0 then
+        self:TruncateText(GetBagName(bagID) or '', self.TITLE_MAX_WIDTH, bag.title)
+    end
+    self:UpdateBag(bag)
+    self:RefreshBagDecorations(bag)
+end
+
+function setup:RefreshOneBagSlots()
+    local bag = self.unified
+    if not bag then return end
+
+    local p = DF_Profiles and DF.profile['bags']
+    local cols = p and p['oneBagButtonsPerRow'] or 6
+    local buttonSize = 37
+    local spacing = 4
+    local frameName = bag:GetName()
+
+    bag.slotButtons = bag.slotButtons or {}
+    for _, btn in pairs(bag.slots or {}) do
+        bag.slotButtons[btn:GetID()] = btn
+    end
+    for _, btn in pairs(bag.slotButtons) do btn:Hide() end
+
+    bag.slots = {}
+    local slotIndex = 1
+    for bagID = 0, 4 do
+        local numSlots = GetContainerNumSlots(bagID) or 0
+        if bagID == 0 and numSlots == 0 then numSlots = 16 end
+        for slotID = 1, numSlots do
+            local displayIndex = slotIndex - 1
+            local col = math.mod(displayIndex, cols)
+            local row = math.floor(displayIndex / cols)
+            local btn = bag.slotButtons[slotIndex]
+            if not btn then
+                btn = self:CreateSlotButton(bag, frameName, slotIndex, bagID, buttonSize, spacing, col, row)
+                bag.slotButtons[slotIndex] = btn
+            else
+                btn:ClearAllPoints()
+                btn:SetPoint('BOTTOMRIGHT', bag, 'BOTTOMRIGHT', -10 - (col * (buttonSize + spacing)), 10 + (row * (buttonSize + spacing)))
+            end
+            btn:SetID(slotIndex)
+            btn.bagID = bagID
+            btn.slotID = slotID
+            btn:Show()
+            table.insert(bag.slots, btn)
+            slotIndex = slotIndex + 1
+        end
+    end
+
+    local totalSlots = table.getn(bag.slots)
+    local rows = math.ceil(totalSlots / cols)
+    bag:SetWidth(20 + (cols * (buttonSize + spacing)))
+    bag:SetHeight(100 + (rows * (buttonSize + spacing)))
+    self:UpdateBag(bag)
+    self:RefreshBagDecorations(bag)
+end
+
+function setup:RefreshBagCapacities()
+    local oneBagMode = DF_Profiles and DF.profile['bags'] and DF.profile['bags']['oneBagMode']
+    local anySeparateBagShown = false
+    for bagID = 0, 4 do
+        if self[bagID] and self[bagID]:IsShown() then anySeparateBagShown = true end
+    end
+
+    for bagID = 0, 4 do
+        local numSlots = GetContainerNumSlots(bagID) or 0
+        if bagID == 0 and numSlots == 0 then numSlots = 16 end
+        local bag = self[bagID]
+        if numSlots > 0 and not bag then
+            bag = self:CreateBagFrame(bagID, numSlots)
+            bag:SetFrameStrata('HIGH')
+            bag:Hide()
+            if self.bagEventHandler then
+                bag:RegisterEvent('BAG_UPDATE')
+                bag:RegisterEvent('BAG_UPDATE_COOLDOWN')
+                bag:RegisterEvent('ITEM_LOCK_CHANGED')
+                bag:SetScript('OnEvent', self.bagEventHandler)
+            end
+            if anySeparateBagShown and not oneBagMode then bag:Show() end
+        end
+
+        if bag then
+            if numSlots > 0 then
+                self:ResizeBagFrame(bag, numSlots)
+            else
+                bag:Hide()
+                self:ResizeBagFrame(bag, 0)
+            end
+        end
+    end
+
+    self:RefreshOneBagSlots()
+    self:RepositionBags()
+    self:RecordBagCapacities()
+end
+
+function setup:RecordBagCapacities()
+    self.bagSlotCounts = self.bagSlotCounts or {}
+    for bagID = 0, 4 do
+        local numSlots = GetContainerNumSlots(bagID) or 0
+        if bagID == 0 and numSlots == 0 then numSlots = 16 end
+        self.bagSlotCounts[bagID] = numSlots
+    end
+end
+
+function setup:BagCapacitiesChanged()
+    if not self.bagSlotCounts then return true end
+    for bagID = 0, 4 do
+        local numSlots = GetContainerNumSlots(bagID) or 0
+        if bagID == 0 and numSlots == 0 then numSlots = 16 end
+        if self.bagSlotCounts[bagID] ~= numSlots then return true end
+    end
+    return false
 end
 
 -- updates
@@ -820,44 +1043,113 @@ function setup:GetBagSortData(bag, slot)
 
     local name, _, quality, itemLevel, _, itemType, itemSubType = GetItemInfo(link)
     return {
+        link = link,
         name = name or link,
         quality = quality or 0,
         itemLevel = itemLevel or 0,
         itemType = itemType or '',
         itemSubType = itemSubType or '',
+        category = self.sortCategoryOrder[itemType] or 100,
     }
 end
 
 function setup:BagItemSortsBefore(a, b)
     if not a then return false end
     if not b then return true end
+    if a.category ~= b.category then return a.category < b.category end
     if a.itemType ~= b.itemType then return a.itemType < b.itemType end
     if a.itemSubType ~= b.itemSubType then return a.itemSubType < b.itemSubType end
+    if a.name ~= b.name then return a.name < b.name end
     if a.quality ~= b.quality then return a.quality > b.quality end
     if a.itemLevel ~= b.itemLevel then return a.itemLevel > b.itemLevel end
-    return a.name < b.name
+    return false
+end
+
+function setup:GetBagSortFamily(bag)
+    if bag == 0 then return 0 end
+
+    if GetContainerNumFreeSlots then
+        local _, family = GetContainerNumFreeSlots(bag)
+        if family ~= nil then return family end
+    end
+
+    if GetItemFamily then
+        local inventoryID = ContainerIDToInventoryID and ContainerIDToInventoryID(bag)
+        local bagLink = inventoryID and GetInventoryItemLink('player', inventoryID)
+        if bagLink then
+            local family = GetItemFamily(bagLink)
+            if family ~= nil then return family end
+        end
+    end
+
+    return 0
+end
+
+function setup:GetBagSortGroups()
+    local groups = {}
+    local groupOrder = {}
+    for bag = 0, 4 do
+        local slots = GetContainerNumSlots(bag) or 0
+        local family = self:GetBagSortFamily(bag)
+        if not groups[family] then
+            groups[family] = {}
+            table.insert(groupOrder, family)
+        end
+        for slot = 1, slots do
+            table.insert(groups[family], {bag = bag, slot = slot})
+        end
+    end
+    return groups, groupOrder
 end
 
 function setup:SortBagsStep()
     local foundLockedSlot = false
-    for bag = 0, 4 do
-        local slots = GetContainerNumSlots(bag) or 0
-        for slot = 1, slots - 1 do
-            local left = self:GetBagSortData(bag, slot)
-            local right = self:GetBagSortData(bag, slot + 1)
-            if self:BagItemSortsBefore(right, left) then
-                local _, _, leftLocked = GetContainerItemInfo(bag, slot)
-                local _, _, rightLocked = GetContainerItemInfo(bag, slot + 1)
-                if leftLocked or rightLocked then
+    local groups, groupOrder = self:GetBagSortGroups()
+    for groupIndex = 1, table.getn(groupOrder) do
+        local family = groupOrder[groupIndex]
+        local positions = groups[family]
+        local items = {}
+        for positionIndex = 1, table.getn(positions) do
+            local position = positions[positionIndex]
+            local item = self:GetBagSortData(position.bag, position.slot)
+            if item then table.insert(items, item) end
+        end
+        table.sort(items, function(a, b) return setup:BagItemSortsBefore(a, b) end)
+
+        for targetIndex = 1, table.getn(positions) do
+            local target = positions[targetIndex]
+            local desired = items[targetIndex]
+            local currentLink = GetContainerItemLink(target.bag, target.slot)
+            local desiredLink = desired and desired.link or nil
+            if currentLink ~= desiredLink then
+                local source = nil
+                for sourceIndex = targetIndex + 1, table.getn(positions) do
+                    local candidate = positions[sourceIndex]
+                    if GetContainerItemLink(candidate.bag, candidate.slot) == desiredLink then
+                        source = candidate
+                        break
+                    end
+                end
+
+                if source then
+                    local _, _, targetLocked = GetContainerItemInfo(target.bag, target.slot)
+                    local _, _, sourceLocked = GetContainerItemInfo(source.bag, source.slot)
+                    if targetLocked or sourceLocked then
+                        foundLockedSlot = true
+                    else
+                        ClearCursor()
+                        PickupContainerItem(source.bag, source.slot)
+                        PickupContainerItem(target.bag, target.slot)
+                        if CursorHasItem() then PickupContainerItem(source.bag, source.slot) end
+                        if CursorHasItem() then ClearCursor() end
+                        if GetContainerItemLink(target.bag, target.slot) == desiredLink then
+                            self.sortStarted = GetTime()
+                            return true
+                        end
+                        foundLockedSlot = true
+                    end
+                elseif desiredLink then
                     foundLockedSlot = true
-                else
-                    ClearCursor()
-                    PickupContainerItem(bag, slot + 1)
-                    PickupContainerItem(bag, slot)
-                    if CursorHasItem() then PickupContainerItem(bag, slot + 1) end
-                    if CursorHasItem() then ClearCursor() end
-                    self.sortStarted = GetTime()
-                    return true
                 end
             end
         end
@@ -887,7 +1179,7 @@ function setup:SortBags()
             end
             if not setup:SortBagsStep() then
                 setup.sortActive = false
-                DEFAULT_CHAT_FRAME:AddMessage('Bags cleaned and sorted')
+                DEFAULT_CHAT_FRAME:AddMessage('Bags cleaned, grouped, and compacted')
             end
         end)
     end
@@ -1020,6 +1312,7 @@ function setup:InitializeOneBag()
     self.unified:SetPoint('BOTTOMRIGHT', anchor, 'BOTTOMRIGHT', 0, 0)
     self.unified:SetFrameStrata('HIGH')
     self.unified:Hide()
+    self:RecordBagCapacities()
 
     return self.unified
 end
