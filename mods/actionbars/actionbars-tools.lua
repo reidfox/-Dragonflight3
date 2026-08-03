@@ -80,6 +80,20 @@ local setup = {
 }
 
 -- create
+function setup:IsCursorCarryingActionPayload()
+    if CursorHasItem and CursorHasItem() then return true end
+    if CursorHasSpell and CursorHasSpell() then return true end
+    if CursorHasMacro and CursorHasMacro() then return true end
+    if CursorHasMoney and CursorHasMoney() then return true end
+    return false
+end
+
+function setup:ShouldDeferMouseAction()
+    if self:IsCursorCarryingActionPayload() then return true end
+    if DF.profile['actionbars']['clickMode'] == 'down' and IsShiftKeyDown and IsShiftKeyDown() then return true end
+    return false
+end
+
 function setup:CreateActionButton(parent, name, actionID)
     local button = DF.ui.SlotButton(parent, name, self.buttonSize)
     button:SetID(actionID)
@@ -205,6 +219,10 @@ function setup:CreateActionButton(parent, name, actionID)
     button.rangeTimer = 0
 
     button:SetScript('OnClick', function()
+        if setup:ShouldDeferMouseAction() then
+            return
+        end
+
         setup.lastUsedAction = this:GetID()
         if DF.profile['actionbars']['animationTrigger'] == 'keypress' and HasAction(this:GetID()) then
             this.animation.active = 0
