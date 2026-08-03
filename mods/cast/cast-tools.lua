@@ -41,7 +41,12 @@ function DF.lib.CreateCastBar(unit)
         sparkPositions = {},
         calculatedFadeTime = 1,
         currentLag = 0,
-        currentSpellId = nil
+        currentSpellId = nil,
+        pushbackOffset = 0,
+        channelPushbackOffset = 0,
+        lastRawStartTime = nil,
+        lastRawEndTime = nil,
+        activeMode = nil
     }
 
     function cast:CreateCastFrame()
@@ -364,6 +369,88 @@ function DF.lib.CreateCastBar(unit)
         self.rankText:SetTextColor(rText, gText, bText)
     end
 
+    function cast:ResetTimingState(mode, startTime, endTime)
+        self.state.pushbackOffset = 0
+        self.state.channelPushbackOffset = 0
+        self.state.lastRawStartTime = startTime
+        self.state.lastRawEndTime = endTime
+        self.state.activeMode = mode
+    end
+
+    function cast:ClearCastState()
+        self.frame:SetAlpha(0)
+        self.state.fadeOut = false
+        self.state.lastCast = nil
+        self.state.lastEndTime = nil
+        self.state.interrupted = false
+        self.state.currentSpellId = nil
+        self.state.sparkPositions = {}
+        self.state.pushbackOffset = 0
+        self.state.channelPushbackOffset = 0
+        self.state.lastRawStartTime = nil
+        self.state.lastRawEndTime = nil
+        self.state.activeMode = nil
+        self.bar:SetWidth(0.1)
+        self.spark:Hide()
+        if self.spark2 then self.spark2:Hide() end
+        self.flash:Hide()
+        self.icon:Hide()
+        self.text:SetText('')
+        self.rankText:SetText('')
+        self.timeText:SetText('')
+        self.lagIndicator:Hide()
+        self.lagIndicator2:Hide()
+        for i = 1, self.config.trailMaxCount do
+            if self.sparkTrails[i] then
+                self.sparkTrails[i]:Hide()
+            end
+        end
+    end
+
+    function cast:ApplyDelay(disruption)
+        disruption = tonumber(disruption) or 0
+        if disruption <= 0 then return end
+        if self.unit ~= 'player' then return end
+        if not self.state.activeMode then
+            if UnitChannelInfo(self.unit) then
+                self.state.activeMode = 'channel'
+            elseif UnitCastingInfo(self.unit) then
+                self.state.activeMode = 'cast'
+            end
+        end
+        if self.state.activeMode == 'channel' then
+            self.state.channelPushbackOffset = self.state.channelPushbackOffset + disruption
+        elseif self.state.activeMode == 'cast' then
+            self.state.pushbackOffset = self.state.pushbackOffset + disruption
+        end
+    end
+
+    function cast:GetAdjustedCastEndTime(startTime, endTime)
+        if self.state.lastRawEndTime and endTime ~= self.state.lastRawEndTime then
+            -- If the client/API already reported the pushback-adjusted end time,
+            -- trust that value and clear the manual offset to avoid double-counting.
+            if endTime > self.state.lastRawEndTime then
+                self.state.pushbackOffset = 0
+            end
+            self.state.lastRawEndTime = endTime
+        end
+        self.state.lastRawStartTime = startTime
+        return endTime + (self.state.pushbackOffset or 0)
+    end
+
+    function cast:GetAdjustedChannelEndTime(startTime, endTime)
+        if self.state.lastRawEndTime and endTime ~= self.state.lastRawEndTime then
+            -- Channel pushback shortens remaining time. If the API already moved
+            -- the end time for us, do not also apply the manual offset.
+            if endTime < self.state.lastRawEndTime then
+                self.state.channelPushbackOffset = 0
+            end
+            self.state.lastRawEndTime = endTime
+        end
+        self.state.lastRawStartTime = startTime
+        return endTime - (self.state.channelPushbackOffset or 0)
+    end
+
     function cast:UpdateFrame(elapsed)
         local castName, rank, text, icon, startTime, endTime = UnitCastingInfo(self.unit)
         local channelName, channelRank, channelText, channelIcon, channelStart, channelEnd = UnitChannelInfo(self.unit)
@@ -371,8 +458,9 @@ function DF.lib.CreateCastBar(unit)
         if castName then
             self.state.interrupted = false
             self.state.fadeOut = false
-            if castName ~= self.state.lastCast then
+            if castName ~= self.state.lastCast or self.state.activeMode ~= 'cast' or startTime ~= self.state.lastRawStartTime then
                 self.state.lastCast = castName
+                self:ResetTimingState('cast', startTime, endTime)
                 local castDuration = (endTime - startTime) / 1000
                 local fadeTime = castDuration * 0.2
                 self.state.calculatedFadeTime = DF.math.clamp(fadeTime, 0.3, 2.5)
@@ -389,12 +477,13 @@ function DF.lib.CreateCastBar(unit)
             self.flash:Hide()
 
             local now = GetTime() * 1000
-            self.state.lastEndTime = endTime
-            local progress = DF.math.normalize(now, startTime, endTime)
+            local adjustedEndTime = self:GetAdjustedCastEndTime(startTime, endTime)
+            self.state.lastEndTime = adjustedEndTime
+            local progress = DF.math.normalize(now, startTime, adjustedEndTime)
             progress = DF.math.clamp(progress, 0, 1)
-            self:UpdateProgress(progress, startTime, endTime)
+            self:UpdateProgress(progress, startTime, adjustedEndTime)
 
-            local remaining = (endTime - now) / 1000
+            local remaining = (adjustedEndTime - now) / 1000
             if self.config.showSpellName then
                 local displayName = castName
                 if string.find(castName, ' %- No Text') then
@@ -429,8 +518,9 @@ function DF.lib.CreateCastBar(unit)
         elseif channelName then
             self.state.interrupted = false
             self.state.fadeOut = false
-            if channelName ~= self.state.lastCast then
+            if channelName ~= self.state.lastCast or self.state.activeMode ~= 'channel' or channelStart ~= self.state.lastRawStartTime then
                 self.state.lastCast = channelName
+                self:ResetTimingState('channel', channelStart, channelEnd)
                 local channelDuration = (channelEnd - channelStart) / 1000
                 local fadeTime = channelDuration * 0.2
                 self.state.calculatedFadeTime = DF.math.clamp(fadeTime, 0.3, 2.5)
@@ -447,11 +537,12 @@ function DF.lib.CreateCastBar(unit)
             self.flash:Hide()
 
             local now = GetTime() * 1000
-            self.state.lastEndTime = channelEnd
-            local timeLeft = channelEnd - now
-            local progress = DF.math.normalize(timeLeft, 0, channelEnd - channelStart)
+            local adjustedChannelEnd = self:GetAdjustedChannelEndTime(channelStart, channelEnd)
+            self.state.lastEndTime = adjustedChannelEnd
+            local timeLeft = adjustedChannelEnd - now
+            local progress = DF.math.normalize(timeLeft, 0, adjustedChannelEnd - channelStart)
             progress = DF.math.clamp(progress, 0, 1)
-            self:UpdateProgress(progress, channelStart, channelEnd)
+            self:UpdateProgress(progress, channelStart, adjustedChannelEnd)
 
             if self.config.showSpellName then
                 local displayName = channelName
@@ -507,6 +598,9 @@ function DF.lib.CreateCastBar(unit)
             if newAlpha <= 0 then
                 self.state.fadeOut = false
                 self.state.lastCast = nil
+                self.state.activeMode = nil
+                self.state.pushbackOffset = 0
+                self.state.channelPushbackOffset = 0
                 self.frame:SetAlpha(0)
             else
                 self.frame:SetAlpha(newAlpha)
@@ -521,7 +615,21 @@ function DF.lib.CreateCastBar(unit)
 
     local castEventFrame = CreateFrame('Frame')
     castEventFrame:RegisterEvent('UNIT_CASTEVENT')
+    if cast.unit == 'player' then
+        castEventFrame:RegisterEvent('SPELLCAST_DELAYED')
+        castEventFrame:RegisterEvent('LOOT_OPENED')
+    end
     castEventFrame:SetScript('OnEvent', function()
+        if event == 'SPELLCAST_DELAYED' then
+            cast:ApplyDelay(arg1)
+            return
+        elseif event == 'LOOT_OPENED' then
+            if cast.state.lastCast and string.find(cast.state.lastCast, 'Fishing') then
+                cast:ClearCastState()
+            end
+            return
+        end
+
         local casterGUID = arg1
         local eventType = arg3
         local spellid = arg4
@@ -531,9 +639,11 @@ function DF.lib.CreateCastBar(unit)
             -- debugprint("[" .. cast.unit .. "] CASTEVENT: " .. eventType .. " | SpellID: " .. spellid .. " | CurrentID: " .. (cast.state.currentSpellId or "nil"))
             if eventType == 'START' then
                 cast.state.currentSpellId = spellid
+                cast.state.activeMode = 'cast'
                 -- cast.state.interrupted = false
             elseif eventType == 'CHANNEL' then
                 cast.state.currentSpellId = spellid
+                cast.state.activeMode = 'channel'
                 -- cast.state.interrupted = false
             elseif eventType == 'FAIL' then
                 if spellid == cast.state.currentSpellId then
@@ -555,18 +665,7 @@ function DF.lib.CreateCastBar(unit)
         local eventFrame = CreateFrame('Frame')
         eventFrame:RegisterEvent('PLAYER_TARGET_CHANGED')
         eventFrame:SetScript('OnEvent', function()
-            cast.frame:SetAlpha(0)
-            cast.state.fadeOut = false
-            cast.state.lastCast = nil
-            cast.state.lastEndTime = nil
-            cast.state.interrupted = false
-            cast.state.currentSpellId = nil
-            cast.state.sparkPositions = {}
-            for i = 1, cast.config.trailMaxCount do
-                if cast.sparkTrails[i] then
-                    cast.sparkTrails[i]:Hide()
-                end
-            end
+            cast:ClearCastState()
         end)
     end
 

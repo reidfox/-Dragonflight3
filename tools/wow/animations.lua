@@ -70,17 +70,20 @@ function StatusBars:UpdatePulseAnimations(now)
             -- apply interpolated color
             bar.fill:SetVertexColor(r, g, b, 1)
 
-            -- calculate pulse scale effect
+            -- calculate pulse width effect. Keep height locked to the bar's
+            -- configured visible fill height; scaling height here makes the
+            -- unitframe bars appear to "dance" by a pixel or two on refreshes.
             local scale = 1 + (PULSE_SCALE - 1) * progress
             local pct = DF.math.clamp(bar.val_ / bar.max, 0, 1)
             local fillWidth = DF.math.clamp(bar:GetWidth() * pct * scale, 0, bar:GetWidth())
+            local fillHeight = math.max(0, bar:GetHeight() - (bar.fillYOffset or 0))
             -- apply scaled dimensions
             if bar.fillDirection == 'RIGHT_TO_LEFT' then
-                bar.fill:SetTexCoord(1-pct, 1, 0, 1)
+                bar.fill:SetTexCoord(1-pct, 1, bar.fillTexCoordTop or 0, bar.fillTexCoordBottom or 1)
             else
-                bar.fill:SetTexCoord(0, pct, 0, 1)
+                bar.fill:SetTexCoord(0, pct, bar.fillTexCoordTop or 0, bar.fillTexCoordBottom or 1)
             end
-            bar.fill:SetSize(fillWidth, bar:GetHeight() * scale)
+            bar.fill:SetSize(fillWidth, fillHeight)
             end
         else
             -- remove disabled pulses

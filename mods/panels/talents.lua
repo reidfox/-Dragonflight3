@@ -32,6 +32,33 @@ DF:NewModule('talents', 1, function() -- TODO: needs total rewrite
         left = {[1] = {0.5, 1.0, 0, 0.5}, [-1] = {0.5, 1.0, 0.5, 1.0}}
     }
 
+    local function TryNativeTalentLink(tabIndex, talentIndex)
+        if not TalentFrameTalent_OnClick then return nil end
+        if TalentFrame_LoadUI then TalentFrame_LoadUI() end
+
+        local nativeFrame = getglobal('TalentFrame')
+        local nativeButton = getglobal('TalentFrameTalent' .. talentIndex)
+        if not nativeFrame or not nativeButton then return nil end
+
+        local wasShown = nativeFrame:IsShown()
+        local oldThis = this
+
+        if PanelTemplates_SetTab then
+            PanelTemplates_SetTab(nativeFrame, tabIndex)
+        end
+        nativeFrame.selectedTab = tabIndex
+        if TalentFrame_Update then TalentFrame_Update() end
+
+        this = nativeButton
+        TalentFrameTalent_OnClick('LeftButton')
+        this = oldThis
+
+        if not wasShown then
+            nativeFrame:Hide()
+        end
+        return true
+    end
+
     local function CreateMainFrame()
         frame = DF.ui.CreatePaperDollFrame('DF_TalentFrame', UIParent, 870, 600, 1)
         frame:SetPoint('CENTER', UIParent, 'CENTER', 0, 80)
@@ -234,7 +261,11 @@ DF:NewModule('talents', 1, function() -- TODO: needs total rewrite
 
         button:SetScript('OnClick', function()
             if IsShiftKeyDown() then
-                DF.common.InsertChatLink(DF.common.GetTalentLink(this.tabIndex, this.talentIndex))
+                if TryNativeTalentLink(this.tabIndex, this.talentIndex) then
+                    return
+                end
+                local talentName = GetTalentInfo(this.tabIndex, this.talentIndex)
+                DF.common.InsertChatLink(DF.common.GetTalentLink(this.tabIndex, this.talentIndex), talentName)
                 return
             end
 

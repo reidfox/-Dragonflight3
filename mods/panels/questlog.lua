@@ -96,7 +96,7 @@ DF:NewModule('questlog', 1, function()
             local questLink = DF.common.GetQuestLogLink(questIndex)
             if questLink and DF.common.InsertChatLink(questLink, questTitle) then
                 return
-            elseif ChatFrameEditBox and ChatFrameEditBox:IsVisible() and originalQuestLogTitleButtonOnClick then
+            elseif originalQuestLogTitleButtonOnClick then
                 originalQuestLogTitleButtonOnClick(button)
                 return
             elseif DF.common.InsertChatLink(nil, questTitle) then

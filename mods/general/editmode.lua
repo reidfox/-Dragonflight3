@@ -13,6 +13,20 @@ DF:NewModule('editmode', 2, 'PLAYER_AFTER_ENTERING_WORLD', function()
     local lastMode = 'frames'
     local lastDropdown = ''
 
+    local function IsQuestTimerFrame(frame)
+        return frame and frame.GetName and frame:GetName() == 'QuestTimerFrame'
+    end
+
+    local function NormalizeQuestTimerFrame(frame)
+        if not IsQuestTimerFrame(frame) then return end
+
+        local width = frame.DF_EditModeWidth or frame:GetWidth()
+        if width and width > 0 then
+            frame.DF_EditModeWidth = width
+            frame:SetWidth(width)
+        end
+    end
+
     local function DrawGrid()
         local grid = CreateFrame('Frame', nil, UIParent)
         grid:SetAllPoints(WorldFrame)
@@ -60,6 +74,8 @@ DF:NewModule('editmode', 2, 'PLAYER_AFTER_ENTERING_WORLD', function()
     end
 
     local function CreateOverlay(targetFrame, label, isElement)
+        NormalizeQuestTimerFrame(targetFrame)
+
         local overlay = CreateFrame('Frame', nil, UIParent)
         overlay:SetWidth(targetFrame:GetWidth())
         overlay:SetHeight(targetFrame:GetHeight())
@@ -89,6 +105,8 @@ DF:NewModule('editmode', 2, 'PLAYER_AFTER_ENTERING_WORLD', function()
     local function SaveFramePosition(frame)
         local name = frame:GetName()
         if not name then return end
+        NormalizeQuestTimerFrame(frame)
+
         if name == 'DF_BagAnchor' and DF_Profiles and DF.profile['bags'] then
             local moveMode = DF.profile['bags']['oneBagMoveMode']
             if moveMode == 'click' or moveMode == 'shiftclick' then
@@ -106,29 +124,38 @@ DF:NewModule('editmode', 2, 'PLAYER_AFTER_ENTERING_WORLD', function()
         end
     end
 
-    local function RestoreFramePositions()
-        for name, pos in pairs(DF.profile['editmode']['framePositions']) do
-            local frame = getglobal(name)
-            if frame then
-                local skipRestore = false
-                if name == 'DF_BagAnchor' and DF_Profiles and DF.profile['bags'] then
-                    local moveMode = DF.profile['bags']['oneBagMoveMode']
-                    if moveMode == 'click' or moveMode == 'shiftclick' then
-                        skipRestore = true
-                    end
-                end
-                if not skipRestore then
-                    frame:ClearAllPoints()
-                    if pos.parent and pos.rx and pos.ry then
-                        local parent = getglobal(pos.parent)
-                        if parent then
-                            frame:SetPoint('CENTER', parent, 'CENTER', pos.rx, pos.ry)
-                        end
-                    elseif pos.x and pos.y then
-                        frame:SetPoint('TOPLEFT', UIParent, 'BOTTOMLEFT', pos.x, pos.y)
-                    end
-                end
+    local function ShouldSkipFrameRestore(name)
+        if name == 'DF_BagAnchor' and DF_Profiles and DF.profile['bags'] then
+            local moveMode = DF.profile['bags']['oneBagMoveMode']
+            if moveMode == 'click' or moveMode == 'shiftclick' then
+                return true
             end
+        end
+        return false
+    end
+
+    local function RestoreFramePosition(name)
+        if ShouldSkipFrameRestore(name) then return end
+
+        local pos = DF.profile['editmode']['framePositions'][name]
+        local frame = getglobal(name)
+        if frame and pos then
+            frame:ClearAllPoints()
+            if pos.parent and pos.rx and pos.ry then
+                local parent = getglobal(pos.parent)
+                if parent then
+                    frame:SetPoint('CENTER', parent, 'CENTER', pos.rx, pos.ry)
+                end
+            elseif pos.x and pos.y then
+                frame:SetPoint('TOPLEFT', UIParent, 'BOTTOMLEFT', pos.x, pos.y)
+            end
+            NormalizeQuestTimerFrame(frame)
+        end
+    end
+
+    local function RestoreFramePositions()
+        for name in pairs(DF.profile['editmode']['framePositions']) do
+            RestoreFramePosition(name)
         end
     end
 
@@ -188,7 +215,9 @@ DF:NewModule('editmode', 2, 'PLAYER_AFTER_ENTERING_WORLD', function()
                     local ox, oy = overlay:GetCenter()
                     targetFrame:SetPoint('CENTER', parent, 'CENTER', ox - px, oy - py)
                 else
-                    targetFrame:SetPoint('CENTER', overlay, 'CENTER', 0, 0)
+                    local px, py = UIParent:GetCenter()
+                    local ox, oy = overlay:GetCenter()
+                    targetFrame:SetPoint('CENTER', UIParent, 'CENTER', ox - px, oy - py)
                 end
                 SaveFramePosition(targetFrame)
             end
@@ -252,7 +281,18 @@ DF:NewModule('editmode', 2, 'PLAYER_AFTER_ENTERING_WORLD', function()
     RestoreFramePositions()
 
     DF.setups.RestoreFramePositions = RestoreFramePositions
+    DF.setups.RestoreFramePosition = RestoreFramePosition
     DF.setups.SaveFramePosition = SaveFramePosition
+
+    local function RestoreQuestTimerFramePosition()
+        RestoreFramePosition('QuestTimerFrame')
+    end
+
+    if QuestTimerFrame then
+        NormalizeQuestTimerFrame(QuestTimerFrame)
+        DF.hooks.HookScript(QuestTimerFrame, 'OnShow', RestoreQuestTimerFramePosition, true)
+    end
+    DF.hooks.HookSecureFunc('QuestTimerFrame_Update', RestoreQuestTimerFramePosition)
 
     editFrame:SetScript('OnShow', function()
         gridFrame:Show()

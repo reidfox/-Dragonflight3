@@ -102,13 +102,17 @@ function DF.common.InsertChatLink(link, fallback)
     local text = link or fallback
     if not text then return false end
 
-    local intellisense = getglobal('DF_IntelliSense')
-    if intellisense and intellisense:IsShown() and intellisense.Insert then
-        intellisense:Insert(text)
+    if link and ChatEdit_InsertLink and ChatEdit_InsertLink(link) then
+        local intellisense = getglobal('DF_IntelliSense')
+        if intellisense and intellisense:IsShown() and ChatFrameEditBox and intellisense.SetText then
+            intellisense:SetText(ChatFrameEditBox:GetText())
+        end
         return true
     end
 
-    if link and ChatEdit_InsertLink and ChatEdit_InsertLink(link) then
+    local intellisense = getglobal('DF_IntelliSense')
+    if intellisense and intellisense:IsShown() and intellisense.Insert then
+        intellisense:Insert(text)
         return true
     end
 
@@ -150,8 +154,7 @@ function DF.common.GetTalentLink(tabIndex, talentIndex)
         if link then return link end
     end
 
-    local name = GetTalentInfo(tabIndex, talentIndex)
-    return name
+    return nil
 end
 
 -- CreateGoldString: formats copper amount into colorized gold/silver/copper string

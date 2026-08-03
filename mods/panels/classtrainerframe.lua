@@ -82,11 +82,17 @@ DF:NewModule('classtrainerframe', 1, function()
             if ClassTrainerSkillName and ClassTrainerSkillIcon then
                 ClassTrainerSkillName:ClearAllPoints()
                 ClassTrainerSkillName:SetPoint('TOPLEFT', ClassTrainerSkillIcon, 'TOPRIGHT', 8, -2)
+                ClassTrainerSkillName:SetWidth(285)
+                ClassTrainerSkillName:SetHeight(14)
+                ClassTrainerSkillName:SetJustifyH('LEFT')
             end
 
             if ClassTrainerSkillSubText and ClassTrainerSkillName then
                 ClassTrainerSkillSubText:ClearAllPoints()
                 ClassTrainerSkillSubText:SetPoint('TOPLEFT', ClassTrainerSkillName, 'BOTTOMLEFT', 0, -2)
+                ClassTrainerSkillSubText:SetWidth(285)
+                ClassTrainerSkillSubText:SetJustifyH('LEFT')
+                ClassTrainerSkillSubText:SetTextColor(1, 1, 1)
             end
         end
 

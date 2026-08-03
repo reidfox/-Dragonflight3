@@ -256,6 +256,8 @@ DF:NewModule('dock', 1, 'PLAYER_AFTER_ENTERING_WORLD',function()
             color = {r=1, g=0, b=0},
             mode = 'pulse',
             pulseSpeed = 1,
+            maxAlphaTop = 0.8,
+            maxAlphaBottom = 0.8,
             duration = 'fullevent',
             blockMouseover = true,
             glows = {mainGlowTop, mainGlowBottom, leftGlowTop, leftGlowBottom, rightGlowTop, rightGlowBottom}
@@ -264,6 +266,8 @@ DF:NewModule('dock', 1, 'PLAYER_AFTER_ENTERING_WORLD',function()
             color = {r=0, g=1, b=0},
             mode = 'pulse',
             pulseSpeed = 1,
+            maxAlphaTop = 0.8,
+            maxAlphaBottom = 0.8,
             duration = 'fullevent',
             blockMouseover = false,
             glows = {mainGlowTop, mainGlowBottom, leftGlowTop, leftGlowBottom, rightGlowTop, rightGlowBottom}
@@ -312,19 +316,31 @@ DF:NewModule('dock', 1, 'PLAYER_AFTER_ENTERING_WORLD',function()
         if glowManager.activeCondition then
             local condition = glowConditions[glowManager.activeCondition]
             glowManager.mouseoverBlocked = condition.blockMouseover
-            helpers.ApplyGlows(condition.glows, condition.color, true)
+            helpers.ApplyGlows(condition.glows, condition, true)
         else
             glowManager.mouseoverBlocked = false
             local allGlows = {mainGlowTop, mainGlowBottom, leftGlowTop, leftGlowBottom, rightGlowTop, rightGlowBottom}
-            helpers.ApplyGlows(allGlows, {r=1, g=1, b=1}, false)
+            helpers.ApplyGlows(allGlows, {color = {r=1, g=1, b=1}, maxAlphaTop = 0, maxAlphaBottom = 0}, false)
         end
     end
 
-    helpers.ApplyGlows = function(glowTextures, color, fadeIn)
+    helpers.IsTopGlow = function(glow)
+        return glow == mainGlowTop or glow == leftGlowTop or glow == rightGlowTop
+    end
+
+    helpers.GetGlowAlpha = function(glow, condition)
+        if helpers.IsTopGlow(glow) then
+            return condition.maxAlphaTop or 0.8
+        end
+        return condition.maxAlphaBottom or 0.8
+    end
+
+    helpers.ApplyGlows = function(glowTextures, condition, fadeIn)
+        local color = condition.color
         for _, glow in pairs(glowTextures) do
             glow:SetVertexColor(color.r, color.g, color.b)
             if fadeIn then
-                UIFrameFadeIn(glow, 0.2, glow:GetAlpha(), glowManager.maxAlpha)
+                UIFrameFadeIn(glow, 0.2, glow:GetAlpha(), helpers.GetGlowAlpha(glow, condition))
             else
                 UIFrameFadeOut(glow, 0.2, glow:GetAlpha(), 0)
             end
@@ -566,11 +582,7 @@ DF:NewModule('dock', 1, 'PLAYER_AFTER_ENTERING_WORLD',function()
         local alpha = (math.sin(DF.setups.glowSync * 3) + 1) / 2
 
         for _, glow in pairs(condition.glows) do
-            if glow == mainGlowTop or glow == leftGlowTop or glow == rightGlowTop then
-                glow:SetAlpha(alpha * glowManager.maxAlphaTop)
-            else
-                glow:SetAlpha(alpha * glowManager.maxAlphaBottom)
-            end
+            glow:SetAlpha(alpha * helpers.GetGlowAlpha(glow, condition))
         end
     end)
 
@@ -717,10 +729,23 @@ DF:NewModule('dock', 1, 'PLAYER_AFTER_ENTERING_WORLD',function()
         helpers.ApplyWidget(sectors[i], DF.profile.dock['sector'..i..'Widget'], i)
     end
 
-    local glowTopOption = 'all'
-    local glowBottomOption = 'all'
-    local restingGlowTopOption = 'all'
-    local restingGlowBottomOption = 'all'
+    local glowTopOption = DF.profile.dock.combatGlowTop or 'all'
+    local glowBottomOption = DF.profile.dock.combatGlowBottom or 'all'
+    local restingGlowTopOption = DF.profile.dock.restingGlowTop or 'all'
+    local restingGlowBottomOption = DF.profile.dock.restingGlowBottom or 'all'
+
+    glowManager.combatGlowEnabled = DF.profile.dock.combatGlow
+    glowManager.restingGlowEnabled = DF.profile.dock.restingGlow
+    glowConditions.combat.color = {r=DF.profile.dock.combatGlowColor[1], g=DF.profile.dock.combatGlowColor[2], b=DF.profile.dock.combatGlowColor[3]}
+    glowConditions.resting.color = {r=DF.profile.dock.restingGlowColor[1], g=DF.profile.dock.restingGlowColor[2], b=DF.profile.dock.restingGlowColor[3]}
+    glowConditions.combat.glows = helpers.GetGlowPieces(glowTopOption, glowBottomOption)
+    glowConditions.resting.glows = helpers.GetGlowPieces(restingGlowTopOption, restingGlowBottomOption)
+    glowConditions.combat.maxAlphaTop = DF.profile.dock.combatGlowAlphaTop or 0.8
+    glowConditions.combat.maxAlphaBottom = DF.profile.dock.combatGlowAlphaBottom or 0.8
+    glowConditions.resting.maxAlphaTop = DF.profile.dock.restingGlowAlphaTop or 0.8
+    glowConditions.resting.maxAlphaBottom = DF.profile.dock.restingGlowAlphaBottom or 0.8
+    glowConditions.combat.pulseSpeed = DF.profile.dock.combatGlowPulseSpeed or 1
+    glowConditions.resting.pulseSpeed = DF.profile.dock.restingGlowPulseSpeed or 1
 
     local callbacks = {}
 
@@ -792,10 +817,12 @@ DF:NewModule('dock', 1, 'PLAYER_AFTER_ENTERING_WORLD',function()
         if glowManager.activeCondition == 'combat' then helpers.UpdateGlowState() end
     end
     callbacks.combatGlowAlphaTop = function(value)
-        glowManager.maxAlphaTop = value
+        glowConditions.combat.maxAlphaTop = value
+        if glowManager.activeCondition == 'combat' then helpers.UpdateGlowState() end
     end
     callbacks.combatGlowAlphaBottom = function(value)
-        glowManager.maxAlphaBottom = value
+        glowConditions.combat.maxAlphaBottom = value
+        if glowManager.activeCondition == 'combat' then helpers.UpdateGlowState() end
     end
     callbacks.combatGlowPulseSpeed = function(value)
         glowConditions.combat.pulseSpeed = value
@@ -823,10 +850,12 @@ DF:NewModule('dock', 1, 'PLAYER_AFTER_ENTERING_WORLD',function()
         if glowManager.activeCondition == 'resting' then helpers.UpdateGlowState() end
     end
     callbacks.restingGlowAlphaTop = function(value)
-        glowManager.maxAlphaTop = value
+        glowConditions.resting.maxAlphaTop = value
+        if glowManager.activeCondition == 'resting' then helpers.UpdateGlowState() end
     end
     callbacks.restingGlowAlphaBottom = function(value)
-        glowManager.maxAlphaBottom = value
+        glowConditions.resting.maxAlphaBottom = value
+        if glowManager.activeCondition == 'resting' then helpers.UpdateGlowState() end
     end
     callbacks.restingGlowPulseSpeed = function(value)
         glowConditions.resting.pulseSpeed = value
@@ -837,6 +866,12 @@ DF:NewModule('dock', 1, 'PLAYER_AFTER_ENTERING_WORLD',function()
     callbacks.sector4Widget = function(value) helpers.ApplyWidget(sectors[4], value, 4) end
     callbacks.sector5Widget = function(value) helpers.ApplyWidget(sectors[5], value, 5) end
     callbacks.sector6Widget = function(value) helpers.ApplyWidget(sectors[6], value, 6) end
+
+    if glowManager.combatGlowEnabled and UnitAffectingCombat('player') then
+        helpers.SetGlowCondition('combat', true)
+    elseif glowManager.restingGlowEnabled and IsResting() then
+        helpers.SetGlowCondition('resting', true)
+    end
 
     DF:NewCallbacks('dock', callbacks)
 end)
