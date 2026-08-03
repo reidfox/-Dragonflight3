@@ -1085,6 +1085,25 @@ function setup:GetBagSortFamily(bag)
     return 0
 end
 
+function setup:IsBagSortIgnoredBag(bag)
+    if bag == 0 then return false end
+
+    local inventoryID = ContainerIDToInventoryID and ContainerIDToInventoryID(bag)
+    local bagLink = inventoryID and GetInventoryItemLink('player', inventoryID)
+    if bagLink and GetItemInfo then
+        local _, _, _, _, _, itemType, itemSubType = GetItemInfo(bagLink)
+        if itemType == 'Container' and (itemSubType == 'Quiver' or itemSubType == 'Ammo Pouch') then
+            return true
+        end
+        if itemSubType and (string.find(itemSubType, 'Quiver') or string.find(itemSubType, 'Ammo')) then
+            return true
+        end
+    end
+
+    local family = self:GetBagSortFamily(bag)
+    return family == 1 or family == 2
+end
+
 function setup:GetBagSortSlotKey(bag, slot)
     return tostring(bag)..':'..tostring(slot)
 end
@@ -1093,16 +1112,18 @@ function setup:GetBagSortGroups()
     local groups = {}
     local groupOrder = {}
     for bag = 0, 4 do
-        local slots = GetContainerNumSlots(bag) or 0
-        local family = self:GetBagSortFamily(bag)
-        if not groups[family] then
-            groups[family] = {}
-            table.insert(groupOrder, family)
-        end
-        for slot = 1, slots do
-            local slotKey = self:GetBagSortSlotKey(bag, slot)
-            if not self.sortFixedSlots or not self.sortFixedSlots[slotKey] then
-                table.insert(groups[family], {bag = bag, slot = slot})
+        if not self:IsBagSortIgnoredBag(bag) then
+            local slots = GetContainerNumSlots(bag) or 0
+            local family = self:GetBagSortFamily(bag)
+            if not groups[family] then
+                groups[family] = {}
+                table.insert(groupOrder, family)
+            end
+            for slot = 1, slots do
+                local slotKey = self:GetBagSortSlotKey(bag, slot)
+                if not self.sortFixedSlots or not self.sortFixedSlots[slotKey] then
+                    table.insert(groups[family], {bag = bag, slot = slot})
+                end
             end
         end
     end
@@ -1111,12 +1132,14 @@ end
 
 function setup:HasPendingBagSortLocks()
     for bag = 0, 4 do
-        local slots = GetContainerNumSlots(bag) or 0
-        for slot = 1, slots do
-            local slotKey = self:GetBagSortSlotKey(bag, slot)
-            local texture, _, locked = GetContainerItemInfo(bag, slot)
-            if texture and locked and (not self.sortFixedSlots or not self.sortFixedSlots[slotKey]) then
-                return true
+        if not self:IsBagSortIgnoredBag(bag) then
+            local slots = GetContainerNumSlots(bag) or 0
+            for slot = 1, slots do
+                local slotKey = self:GetBagSortSlotKey(bag, slot)
+                local texture, _, locked = GetContainerItemInfo(bag, slot)
+                if texture and locked and (not self.sortFixedSlots or not self.sortFixedSlots[slotKey]) then
+                    return true
+                end
             end
         end
     end
@@ -1230,12 +1253,14 @@ function setup:SortBags()
     self.sortSkippedLockedItems = false
     self.sortWaitingForUnlock = false
     for bag = 0, 4 do
-        local slots = GetContainerNumSlots(bag) or 0
-        for slot = 1, slots do
-            local _, _, locked = GetContainerItemInfo(bag, slot)
-            if locked and GetContainerItemLink(bag, slot) then
-                self.sortFixedSlots[self:GetBagSortSlotKey(bag, slot)] = true
-                self.sortSkippedLockedItems = true
+        if not self:IsBagSortIgnoredBag(bag) then
+            local slots = GetContainerNumSlots(bag) or 0
+            for slot = 1, slots do
+                local _, _, locked = GetContainerItemInfo(bag, slot)
+                if locked and GetContainerItemLink(bag, slot) then
+                    self.sortFixedSlots[self:GetBagSortSlotKey(bag, slot)] = true
+                    self.sortSkippedLockedItems = true
+                end
             end
         end
     end
