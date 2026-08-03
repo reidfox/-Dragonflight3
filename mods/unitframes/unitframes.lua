@@ -58,5 +58,6 @@ DF:NewModule('unitframes', 1, 'PLAYER_LOGIN', function()
         callbacks[key..'HealthBarTexture'](DF.profile['unitframes'][key..'HealthBarTexture'])
         callbacks[key..'ManaBarTexture'](DF.profile['unitframes'][key..'ManaBarTexture'])
         callbacks[key..'PortraitBorderTexture'](DF.profile['unitframes'][key..'PortraitBorderTexture'])
+        callbacks[key..'FlipPortraitBorder'](DF.profile['unitframes'][key..'FlipPortraitBorder'])
     end
 end)

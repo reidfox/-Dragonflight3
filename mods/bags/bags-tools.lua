@@ -1091,17 +1091,32 @@ function setup:IsBagSortIgnoredBag(bag)
     local inventoryID = ContainerIDToInventoryID and ContainerIDToInventoryID(bag)
     local bagLink = inventoryID and GetInventoryItemLink('player', inventoryID)
     if bagLink and GetItemInfo then
-        local _, _, _, _, _, itemType, itemSubType = GetItemInfo(bagLink)
-        if itemType == 'Container' and (itemSubType == 'Quiver' or itemSubType == 'Ammo Pouch') then
+        local name, _, _, _, _, itemType, itemSubType = GetItemInfo(bagLink)
+        local bagName = name and string.lower(name) or ''
+        local bagType = itemType and string.lower(itemType) or ''
+        local bagSubType = itemSubType and string.lower(itemSubType) or ''
+
+        if bagName == '' and bagType == '' and bagSubType == '' then
             return true
         end
-        if itemSubType and (string.find(itemSubType, 'Quiver') or string.find(itemSubType, 'Ammo')) then
+
+        if string.find(bagName, 'quiver') or string.find(bagName, 'ammo')
+            or string.find(bagType, 'quiver') or string.find(bagType, 'ammo')
+            or string.find(bagSubType, 'quiver') or string.find(bagSubType, 'ammo') then
+            return true
+        end
+
+        if bagType == 'container' and bagSubType == 'bag' then
+            return false
+        end
+
+        if bagType ~= '' or bagSubType ~= '' then
             return true
         end
     end
 
     local family = self:GetBagSortFamily(bag)
-    return family == 1 or family == 2
+    return family ~= 0
 end
 
 function setup:GetBagSortSlotKey(bag, slot)

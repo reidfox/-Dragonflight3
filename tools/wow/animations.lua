@@ -155,7 +155,7 @@ function DF.animations.CreateStatusBar(parent, width, height, animConfig, name)
             self.fill:SetTexCoord(0, pct, texTop, texBottom)
         end
         self.fill:SetWidth(fillWidth)
-        self.fill:SetHeight(self:GetHeight())
+        self.fill:SetHeight(math.max(0, self:GetHeight() - (self.fillYOffset or 0)))
     end
 
     function bar:SetValue(val, instant)

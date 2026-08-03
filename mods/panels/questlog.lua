@@ -85,16 +85,22 @@ DF:NewModule('questlog', 1, function()
     end
 
     -- hook questlog shift-click to support DF intellisense
+    local originalQuestLogTitleButtonOnClick = _G.QuestLogTitleButton_OnClick
     DF.hooks.Hook('QuestLogTitleButton_OnClick', function(button)
         local questIndex = this:GetID() + FauxScrollFrame_GetOffset(QuestLogListScrollFrame)
         if IsShiftKeyDown() then
             if this.isHeader then
                 return
             end
-            if getglobal('DF_IntelliSense') and getglobal('DF_IntelliSense'):IsShown() then
-                getglobal('DF_IntelliSense'):Insert(gsub(this:GetText(), ' *(.*)', '%1'))
-            elseif ChatFrameEditBox:IsVisible() then
-                ChatFrameEditBox:Insert(gsub(this:GetText(), ' *(.*)', '%1'))
+            local questTitle = gsub(this:GetText(), ' *(.*)', '%1')
+            local questLink = DF.common.GetQuestLogLink(questIndex)
+            if questLink and DF.common.InsertChatLink(questLink, questTitle) then
+                return
+            elseif ChatFrameEditBox and ChatFrameEditBox:IsVisible() and originalQuestLogTitleButtonOnClick then
+                originalQuestLogTitleButtonOnClick(button)
+                return
+            elseif DF.common.InsertChatLink(nil, questTitle) then
+                return
             else
                 if IsQuestWatched(questIndex) then
                     tremove(QUEST_WATCH_LIST, questIndex)
@@ -124,11 +130,7 @@ DF:NewModule('questlog', 1, function()
                 DressUpItemLink(GetQuestLogItemLink(this.type, this:GetID()))
             end
         elseif IsShiftKeyDown() and this.rewardType ~= 'spell' then
-            if getglobal('DF_IntelliSense') and getglobal('DF_IntelliSense'):IsShown() then
-                getglobal('DF_IntelliSense'):Insert(GetQuestLogItemLink(this.type, this:GetID()))
-            elseif ChatFrameEditBox:IsVisible() then
-                ChatFrameEditBox:Insert(GetQuestLogItemLink(this.type, this:GetID()))
-            end
+            DF.common.InsertChatLink(GetQuestLogItemLink(this.type, this:GetID()))
         end
     end)
 

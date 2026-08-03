@@ -28,6 +28,8 @@ function init:DetectServer()
 end
 
 function init:ApplyDefaults(profileName)
+    if not profileName or profileName == '' then return end
+
     -- create profile if first time, keep existing
     DF_Profiles.profiles[profileName] = DF_Profiles.profiles[profileName] or {}
     for module, defaults in pairs(DF.defaults) do
@@ -128,12 +130,25 @@ end
 function init:SetupProfile()
     local charKey = UnitName('player') .. '-' .. GetRealmName()
     local profileName = DF_Profiles.meta.characterProfiles[charKey]
-    if not profileName and not DF_Profiles.meta.autoAssigned[charKey] then
+
+    -- .defaults is an internal template rebuilt on every login; keep players on a
+    -- persistent profile so settings/module toggles survive reloads.
+    if profileName == '.defaults' or (profileName and not DF_Profiles.profiles[profileName]) then
+        profileName = 'default'
+        init:ApplyDefaults(profileName)
+        DF_Profiles.meta.characterProfiles[charKey] = profileName
+        DF_Profiles.meta.autoAssigned[charKey] = true
+    elseif not profileName and not DF_Profiles.meta.autoAssigned[charKey] then
         profileName = charKey
         init:ApplyDefaults(profileName)
         DF_Profiles.meta.characterProfiles[charKey] = profileName
         DF_Profiles.meta.autoAssigned[charKey] = true
+    elseif not profileName then
+        profileName = 'default'
+        init:ApplyDefaults(profileName)
+        DF_Profiles.meta.characterProfiles[charKey] = profileName
     end
+
     DF.profile = DF_Profiles.profiles[profileName]
     DF_Profiles.meta.activeProfile = profileName
     DF.others.currentProfile = profileName
@@ -200,6 +215,9 @@ function init:ExecModules(forceImmediate)
 end
 
 function init:Finalize()
+    if DF.setups and DF.setups.ApplyUIParentSettings then
+        DF.setups.ApplyUIParentSettings()
+    end
     DF:UnregisterAllEvents()
     DF:SetScript('OnEvent', nil)
     -- clear pending events
@@ -220,6 +238,8 @@ function init:InitDF()
     -- always create fresh defaults profile
     DF_Profiles.profiles['.defaults'] = {}
     init:ApplyDefaults('.defaults')
+    -- persistent user-facing default profile
+    init:ApplyDefaults('default')
 
     if init:CheckBlacklist() then return end
     if init:CheckDBVersion() then return end
@@ -251,8 +271,14 @@ function DF:NewCallbacks(module, callbacks)
 end
 
 function DF:SetConfig(module, option, value)
+    if not DF.profile[module] then
+        DF.profile[module] = {}
+    end
     DF.profile[module][option] = value
-    DF.callbacks[module .. '.' .. option](value)
+    local callback = DF.callbacks[module .. '.' .. option]
+    if callback then
+        callback(value)
+    end
 end
 
 -- updates/events

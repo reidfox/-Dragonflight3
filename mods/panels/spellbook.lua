@@ -251,6 +251,10 @@ DF:NewModule('spellbook', 1, 'PLAYER_ENTERING_WORLD', function()
 
         iconBtn:SetScript("OnClick", function()
             if container.spellIndex and container.bookType then
+                if IsShiftKeyDown() then
+                    DF.common.InsertChatLink(DF.common.GetSpellBookLink(container.spellIndex, container.bookType))
+                    return
+                end
                 CastSpell(container.spellIndex, container.bookType)
             end
         end)

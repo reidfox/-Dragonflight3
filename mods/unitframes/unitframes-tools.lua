@@ -445,6 +445,7 @@ function setup:SetSimpleBarFillOffset(unitFrame, bar, kind, enabled)
     local yOffset = enabled and 3 or 0
     local cropPlayerPower = enabled and unitFrame.unit == 'player' and kind == 'power'
 
+    bar.fillYOffset = yOffset
     bar.fillTexCoordTop = cropPlayerPower and 2/16 or 0
     bar.fillTexCoordBottom = cropPlayerPower and 14/16 or 1
 
@@ -1076,8 +1077,18 @@ function setup:UpdateClassificationBorder(unitFrame)
         local shouldFlip = DF_Profiles and DF.profile['unitframes'] and DF.profile['unitframes'][flipKey]
         if shouldFlip then
             unitFrame.border:SetTexCoord(1, 0, 0, 1)
+            unitFrame.borderBg:SetTexCoord(1, 0, 0, 1)
+            if borderTexture == 'portrait_border_edge' then
+                if unitFrame.model.combatGlow then unitFrame.model.combatGlow:SetTexCoord(1, 0, 0, 1) end
+                if unitFrame.model.restingGlow then unitFrame.model.restingGlow:SetTexCoord(1, 0, 0, 1) end
+            end
         else
             unitFrame.border:SetTexCoord(0, 1, 0, 1)
+            unitFrame.borderBg:SetTexCoord(0, 1, 0, 1)
+            if borderTexture == 'portrait_border_edge' then
+                if unitFrame.model.combatGlow then unitFrame.model.combatGlow:SetTexCoord(0, 1, 0, 1) end
+                if unitFrame.model.restingGlow then unitFrame.model.restingGlow:SetTexCoord(0, 1, 0, 1) end
+            end
         end
     end
 end

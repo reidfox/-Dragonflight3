@@ -98,6 +98,62 @@ function DF.common.CalculateLinearOffset(size, minSize, maxSize, minOffset, maxO
     return minOffset + (size - minSize) * (maxOffset - minOffset) / (maxSize - minSize)
 end
 
+function DF.common.InsertChatLink(link, fallback)
+    local text = link or fallback
+    if not text then return false end
+
+    local intellisense = getglobal('DF_IntelliSense')
+    if intellisense and intellisense:IsShown() and intellisense.Insert then
+        intellisense:Insert(text)
+        return true
+    end
+
+    if link and ChatEdit_InsertLink and ChatEdit_InsertLink(link) then
+        return true
+    end
+
+    if ChatFrameEditBox and ChatFrameEditBox:IsVisible() then
+        ChatFrameEditBox:Insert(text)
+        return true
+    end
+
+    return false
+end
+
+function DF.common.GetQuestLogLink(questIndex)
+    if GetQuestLogQuestLink then
+        local link = GetQuestLogQuestLink(questIndex)
+        if link then return link end
+    end
+    if GetQuestLink then
+        local link = GetQuestLink(questIndex)
+        if link then return link end
+    end
+    return nil
+end
+
+function DF.common.GetSpellBookLink(spellIndex, bookType)
+    if GetSpellLink then
+        local link = GetSpellLink(spellIndex, bookType)
+        if link then return link end
+    end
+
+    local name, rank = GetSpellName(spellIndex, bookType)
+    if not name then return nil end
+    if rank and rank ~= '' then return name .. ' (' .. rank .. ')' end
+    return name
+end
+
+function DF.common.GetTalentLink(tabIndex, talentIndex)
+    if GetTalentLink then
+        local link = GetTalentLink(tabIndex, talentIndex)
+        if link then return link end
+    end
+
+    local name = GetTalentInfo(tabIndex, talentIndex)
+    return name
+end
+
 -- CreateGoldString: formats copper amount into colorized gold/silver/copper string
 -- money (number) - amount in copper
 -- returns: formatted string with gold/silver/copper values

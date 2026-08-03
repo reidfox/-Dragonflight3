@@ -67,6 +67,31 @@ DF:NewModule('classtrainerframe', 1, function()
         })
         botBg:SetBackdropColor(0, 0, 0, 0.3)
 
+        local function PositionTrainerDetails()
+            if ClassTrainerDetailScrollFrame then
+                ClassTrainerDetailScrollFrame:ClearAllPoints()
+                ClassTrainerDetailScrollFrame:SetPoint('TOPLEFT', botBg, 'TOPLEFT', 8, -12)
+                ClassTrainerDetailScrollFrame:SetPoint('BOTTOMRIGHT', botBg, 'BOTTOMRIGHT', -28, 8)
+            end
+
+            if ClassTrainerSkillIcon and ClassTrainerDetailScrollChildFrame then
+                ClassTrainerSkillIcon:ClearAllPoints()
+                ClassTrainerSkillIcon:SetPoint('TOPLEFT', ClassTrainerDetailScrollChildFrame, 'TOPLEFT', 0, -2)
+            end
+
+            if ClassTrainerSkillName and ClassTrainerSkillIcon then
+                ClassTrainerSkillName:ClearAllPoints()
+                ClassTrainerSkillName:SetPoint('TOPLEFT', ClassTrainerSkillIcon, 'TOPRIGHT', 8, -2)
+            end
+
+            if ClassTrainerSkillSubText and ClassTrainerSkillName then
+                ClassTrainerSkillSubText:ClearAllPoints()
+                ClassTrainerSkillSubText:SetPoint('TOPLEFT', ClassTrainerSkillName, 'BOTTOMLEFT', 0, -2)
+            end
+        end
+
+        PositionTrainerDetails()
+
         if ClassTrainerTrainButton then
             ClassTrainerTrainButton:ClearAllPoints()
             ClassTrainerTrainButton:SetPoint('BOTTOMRIGHT', customBg, 'BOTTOMRIGHT', -90, 5)
@@ -89,7 +114,16 @@ DF:NewModule('classtrainerframe', 1, function()
 
         DF.hooks.HookScript(ClassTrainerFrame, 'OnShow', function()
             ClassTrainerFrame:SetBackdrop(nil)
+            PositionTrainerDetails()
         end, true)
+
+        DF.hooks.HookSecureFunc('ClassTrainerFrame_Update', function()
+            PositionTrainerDetails()
+        end)
+
+        DF.hooks.HookSecureFunc('ClassTrainer_SetSelection', function()
+            PositionTrainerDetails()
+        end)
 
     end
 

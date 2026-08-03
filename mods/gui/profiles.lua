@@ -32,6 +32,10 @@ DF:NewModule('gui-profiles', 2, function()
 
     local profileUI = {selectedProfile = nil}
 
+    local function IsInternalProfile(name)
+        return name == '.defaults'
+    end
+
     local inputDialog = DF.ui.CreatePaperDollFrame('DF_InputDialog', setup.mainframe, 300, 120, 2)
     inputDialog:SetPoint('CENTER', UIParent, 'CENTER', 0, 0)
     inputDialog:SetFrameStrata('DIALOG')
@@ -212,10 +216,12 @@ DF:NewModule('gui-profiles', 2, function()
 
     function profileUI:UpdateButtonStates()
         local count = 0
-        for _ in pairs(DF_Profiles.profiles) do
-            count = count + 1
+        for name, _ in pairs(DF_Profiles.profiles) do
+            if not IsInternalProfile(name) then
+                count = count + 1
+            end
         end
-        if profileUI.selectedProfile == '.defaults' or profileUI.selectedProfile == 'default' or count <= 2 then
+        if IsInternalProfile(profileUI.selectedProfile) or profileUI.selectedProfile == 'default' or count <= 1 then
             renameBtn:Disable()
             deleteBtn:Disable()
         elseif profileUI.selectedProfile == DF_Profiles.meta.activeProfile then
@@ -229,9 +235,14 @@ DF:NewModule('gui-profiles', 2, function()
 
     function profileUI:RefreshProfileList()
         DF_Profiles.profiles = DF_Profiles.profiles or {}
+        if IsInternalProfile(profileUI.selectedProfile) then
+            profileUI.selectedProfile = nil
+        end
         local profiles = {}
         for name, _ in pairs(DF_Profiles.profiles) do
-            table.insert(profiles, name)
+            if not IsInternalProfile(name) then
+                table.insert(profiles, name)
+            end
         end
         table.sort(profiles)
 
@@ -845,6 +856,7 @@ DF:NewModule('gui-profiles', 2, function()
     end
 
     function profileUI:ExportProfile(name)
+        if IsInternalProfile(name) then return nil end
         if not DF_Profiles.profiles[name] then return nil end
         local serialized = self:Serialize(DF_Profiles.profiles[name])
         local compressed = self:Compress(serialized)
@@ -860,6 +872,7 @@ DF:NewModule('gui-profiles', 2, function()
     end
 
     function profileUI:CreateProfile(name)
+        if IsInternalProfile(name) then return end
         DF_Profiles.profiles = DF_Profiles.profiles or {}
         DF_Profiles.profiles[name] = {}
         for module, defaults in pairs(DF.defaults) do
@@ -878,12 +891,19 @@ DF:NewModule('gui-profiles', 2, function()
     end
 
     function profileUI:DeleteProfile(name)
+        if IsInternalProfile(name) or name == 'default' then return end
         DF_Profiles.profiles = DF_Profiles.profiles or {}
         DF_Profiles.profiles[name] = nil
     end
 
     function profileUI:SwitchProfile(name)
+        if IsInternalProfile(name) then
+            name = 'default'
+        end
         DF_Profiles.profiles = DF_Profiles.profiles or {}
+        if not DF_Profiles.profiles[name] then
+            self:CreateProfile(name)
+        end
         DF.profile = DF_Profiles.profiles[name]
         DF_Profiles.meta = DF_Profiles.meta or {}
         DF_Profiles.meta.activeProfile = name

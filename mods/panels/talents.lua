@@ -233,6 +233,11 @@ DF:NewModule('talents', 1, function() -- TODO: needs total rewrite
         button.talentIndex = talentIndex
 
         button:SetScript('OnClick', function()
+            if IsShiftKeyDown() then
+                DF.common.InsertChatLink(DF.common.GetTalentLink(this.tabIndex, this.talentIndex))
+                return
+            end
+
             local _, _, talentTier, _, talentRank, talentMaxRank, _, talentMeetsPrereq = GetTalentInfo(this.tabIndex, this.talentIndex)
             local characterPoints = UnitCharacterPoints('player')
             local _, _, tabPointsSpent = GetTalentTabInfo(this.tabIndex)

@@ -31,7 +31,7 @@ DF:NewDefaults('UIParent', {
 
 })
 
-DF:NewModule('UIParent', 2, 'PLAYER_ENTERING_WORLD', function()
+DF:NewModule('UIParent', 2, function()
     -- callbacks
     local callbacks = {}
 
@@ -176,12 +176,43 @@ DF:NewModule('UIParent', 2, 'PLAYER_ENTERING_WORLD', function()
     end
 
     callbacks.worldmapBgAlpha = function(value)
-        WorldMapFrame:SetAlpha(value)
+        if WorldMapFrame then
+            WorldMapFrame:SetAlpha(value)
+        end
     end
 
     callbacks.worldmapScale = function(value)
-        WorldMapFrame:SetScale(value)
+        if WorldMapFrame then
+            WorldMapFrame:SetScale(value)
+        end
     end
 
+    local function ApplyAll()
+        if not DF.profile or not DF.profile.UIParent then return end
+
+        for option, callback in pairs(callbacks) do
+            if DF.profile.UIParent[option] ~= nil then
+                callback(DF.profile.UIParent[option])
+            end
+        end
+    end
+
+    DF.setups.ApplyUIParentSettings = ApplyAll
     DF:NewCallbacks('UIParent', callbacks)
+
+    local applyFrame = CreateFrame('Frame')
+    applyFrame.elapsed = 0
+    applyFrame.ticks = 0
+    applyFrame:SetScript('OnUpdate', function()
+        this.elapsed = this.elapsed + arg1
+        if this.elapsed < 0.5 then return end
+
+        this.elapsed = 0
+        this.ticks = this.ticks + 1
+        ApplyAll()
+
+        if this.ticks >= 8 then
+            this:SetScript('OnUpdate', nil)
+        end
+    end)
 end)
