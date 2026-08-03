@@ -119,8 +119,9 @@ DF:NewModule('characterframe', 1,'PLAYER_ENTERING_WORLD',function()
     customBg:UpdatePetTab()
 
 
+    local originalToggleCharacter = _G.ToggleCharacter
     DF.hooks.Hook('ToggleCharacter', function(tab)
-        DF.hooks.registry[_G]['ToggleCharacter'](tab)
+        originalToggleCharacter(tab)
         if CharacterFrame:IsVisible() and customBg.Tabs then
             local tabIndex = nil
             local hasPet = HasPetUI()
@@ -144,6 +145,7 @@ DF:NewModule('characterframe', 1,'PLAYER_ENTERING_WORLD',function()
         end
     end)
 
+    local originalPaperDollItemSlotButtonOnClick = _G.PaperDollItemSlotButton_OnClick
     DF.hooks.Hook('PaperDollItemSlotButton_OnClick', function(button, ignoreModifiers)
         if button == 'LeftButton' and IsShiftKeyDown() and not ignoreModifiers then
             if getglobal('DF_IntelliSense') and getglobal('DF_IntelliSense'):IsShown() then
@@ -151,7 +153,7 @@ DF:NewModule('characterframe', 1,'PLAYER_ENTERING_WORLD',function()
                 return
             end
         end
-        DF.hooks.registry[_G]['PaperDollItemSlotButton_OnClick'](button, ignoreModifiers)
+        originalPaperDollItemSlotButtonOnClick(button, ignoreModifiers)
     end)
 
     DF.hooks.HookScript(CharacterFrame, 'OnShow', function()
