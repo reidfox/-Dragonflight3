@@ -149,6 +149,8 @@ function DF.common.GetSpellBookLink(spellIndex, bookType)
 end
 
 function DF.common.GetTalentLink(tabIndex, talentIndex)
+    if TalentFrame_LoadUI then TalentFrame_LoadUI() end
+
     if GetTalentLink then
         local link = GetTalentLink(tabIndex, talentIndex)
         if link then return link end

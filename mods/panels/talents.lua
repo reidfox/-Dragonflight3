@@ -33,8 +33,8 @@ DF:NewModule('talents', 1, function() -- TODO: needs total rewrite
     }
 
     local function TryNativeTalentLink(tabIndex, talentIndex)
-        if not TalentFrameTalent_OnClick then return nil end
         if TalentFrame_LoadUI then TalentFrame_LoadUI() end
+        if not TalentFrameTalent_OnClick then return nil end
 
         local nativeFrame = getglobal('TalentFrame')
         local nativeButton = getglobal('TalentFrameTalent' .. talentIndex)
