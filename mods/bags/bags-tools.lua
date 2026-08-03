@@ -1369,10 +1369,7 @@ function setup:SellGreyItems()
         self.sellFrame:SetScript('OnHide', function()
             if this.count > 0 then
                 local income = GetMoney() - this.startGold
-                local g = math.floor(income / 10000)
-                local s = math.floor(math.mod(income, 10000) / 100)
-                local c = math.mod(income, 100)
-                DEFAULT_CHAT_FRAME:AddMessage('Sold ' .. this.count .. ' grey items for ' .. g .. 'g ' .. s .. 's ' .. c .. 'c')
+                DEFAULT_CHAT_FRAME:AddMessage('Sold ' .. this.count .. ' grey items for ' .. DF.common.CreateGoldString(income))
             else
                 DEFAULT_CHAT_FRAME:AddMessage('No grey items to sell')
             end

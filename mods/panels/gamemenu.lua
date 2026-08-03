@@ -69,8 +69,16 @@ DF:NewModule('gamemenu', 1, function()
     local buttonHeight = 22
     local buttonSpacing = 5
     local emptySpacing = 5
+    local menuButtonFontSize = 13
+
+    local function SetMenuButtonFont(button)
+        if button and button.text then
+            button.text:SetFont('Fonts\\FRIZQT__.TTF', menuButtonFontSize, 'OUTLINE')
+        end
+    end
 
     local dfBtn = DF.ui.Button(frame, info.addonNameColor, 160, buttonHeight)
+    SetMenuButtonFont(dfBtn)
     dfBtn:SetPoint('TOP', frame, 'TOP', 0, yOffset)
     dfBtn:SetScript('OnClick', function()
         frame:Hide()
@@ -79,6 +87,7 @@ DF:NewModule('gamemenu', 1, function()
     yOffset = yOffset - buttonHeight - buttonSpacing * emptySpacing
 
     local editBtn = DF.ui.Button(frame, 'Edit Mode', 160, buttonHeight)
+    SetMenuButtonFont(editBtn)
     editBtn:SetPoint('TOP', frame, 'TOP', 0, yOffset)
     editBtn:SetScript('OnClick', function()
         frame:Hide()
@@ -90,6 +99,7 @@ DF:NewModule('gamemenu', 1, function()
     yOffset = yOffset - buttonHeight - buttonSpacing
 
     local addonsBtn = DF.ui.Button(frame, 'Addons', 140, buttonHeight)
+    SetMenuButtonFont(addonsBtn)
     addonsBtn:SetPoint('TOP', frame, 'TOP', -10, yOffset)
     addonsBtn:SetScript('OnClick', function()
         frame:Hide()
@@ -100,6 +110,7 @@ DF:NewModule('gamemenu', 1, function()
     end)
 
     local slashBtn = DF.ui.Button(frame, '+', 21, buttonHeight, nil, {.9, 0, 0})
+    SetMenuButtonFont(slashBtn)
     slashBtn:SetPoint('LEFT', addonsBtn, 'RIGHT', -2, 0)
     slashBtn:SetScript('OnClick', function()
         frame:Hide()
@@ -110,6 +121,7 @@ DF:NewModule('gamemenu', 1, function()
     yOffset = yOffset - buttonHeight - buttonSpacing * emptySpacing
 
     local optionsBtn = DF.ui.Button(frame, 'Options', 160, buttonHeight)
+    SetMenuButtonFont(optionsBtn)
     optionsBtn:SetPoint('TOP', frame, 'TOP', 0, yOffset)
     optionsBtn:SetScript('OnClick', function()
         frame:Hide()
@@ -125,6 +137,7 @@ DF:NewModule('gamemenu', 1, function()
     yOffset = yOffset - buttonHeight - buttonSpacing
 
     local shopBtn = DF.ui.Button(frame, 'Donation Shop', 160, buttonHeight)
+    SetMenuButtonFont(shopBtn)
     shopBtn:SetPoint('TOP', frame, 'TOP', 0, yOffset)
     shopBtn:SetScript('OnClick', function()
         frame:Hide()
@@ -135,6 +148,7 @@ DF:NewModule('gamemenu', 1, function()
     yOffset = yOffset - buttonHeight - buttonSpacing * emptySpacing
 
     local keybindsBtn = DF.ui.Button(frame, 'Keybinds', 140, buttonHeight)
+    SetMenuButtonFont(keybindsBtn)
     keybindsBtn:SetPoint('TOP', frame, 'TOP', -10, yOffset)
     keybindsBtn:SetScript('OnClick', function()
         frame:Hide()
@@ -150,6 +164,7 @@ DF:NewModule('gamemenu', 1, function()
     end)
 
     local hmBtn = DF.ui.Button(frame, '+', 21, buttonHeight, nil, {.9, 0, 0})
+    SetMenuButtonFont(hmBtn)
     hmBtn:SetPoint('LEFT', keybindsBtn, 'RIGHT', -2, 0)
     hmBtn:SetScript('OnClick', function()
         frame:Hide()
@@ -160,6 +175,7 @@ DF:NewModule('gamemenu', 1, function()
     yOffset = yOffset - buttonHeight - buttonSpacing
 
     local macrosBtn = DF.ui.Button(frame, 'Macros', 140, buttonHeight)
+    SetMenuButtonFont(macrosBtn)
     macrosBtn:SetPoint('TOP', frame, 'TOP', -10, yOffset)
     macrosBtn:SetScript('OnClick', function()
         frame:Hide()
@@ -168,6 +184,7 @@ DF:NewModule('gamemenu', 1, function()
     end)
 
     local macroBtn = DF.ui.Button(frame, '+', 21, buttonHeight, nil, {.9, 0, 0})
+    SetMenuButtonFont(macroBtn)
     macroBtn:SetPoint('LEFT', macrosBtn, 'RIGHT', -2, 0)
     macroBtn:SetScript('OnClick', function()
         frame:Hide()
@@ -176,6 +193,7 @@ DF:NewModule('gamemenu', 1, function()
     yOffset = yOffset - buttonHeight - buttonSpacing * emptySpacing
 
     local rlBtn = DF.ui.Button(frame, 'Reload', 160, buttonHeight)
+    SetMenuButtonFont(rlBtn)
     rlBtn:SetPoint('TOP', frame, 'TOP', 0, yOffset)
     rlBtn:SetScript('OnClick', function()
         frame:Hide()
@@ -195,6 +213,7 @@ DF:NewModule('gamemenu', 1, function()
     local exitTimer = 0
     local exitText = nil
     local logoutBtn = DF.ui.Button(frame, 'Logout', 160, buttonHeight, nil, {.9, 0, 0})
+    SetMenuButtonFont(logoutBtn)
     logoutBtn:SetPoint('TOP', frame, 'TOP', 0, yOffset)
     logoutBtn:SetScript('OnClick', function()
         frame:Hide()
@@ -214,6 +233,7 @@ DF:NewModule('gamemenu', 1, function()
     yOffset = yOffset - buttonHeight - buttonSpacing
 
     local exitBtn = DF.ui.Button(frame, 'Exit Game', 160, buttonHeight, nil, {.9, 0, 0})
+    SetMenuButtonFont(exitBtn)
     exitBtn:SetPoint('TOP', frame, 'TOP', 0, yOffset)
     exitBtn:SetScript('OnClick', function()
         frame:Hide()
@@ -235,6 +255,7 @@ DF:NewModule('gamemenu', 1, function()
     yOffset = yOffset - buttonHeight - buttonSpacing * emptySpacing
 
     local returnBtn = DF.ui.Button(frame, 'Return to Game', 160, buttonHeight, nil, {.8, .8, .8})
+    SetMenuButtonFont(returnBtn)
     returnBtn:SetPoint('TOP', frame, 'TOP', 0, yOffset)
     returnBtn:SetScript('OnClick', function()
         PlaySound('igMainMenuQuit')
@@ -242,7 +263,10 @@ DF:NewModule('gamemenu', 1, function()
     end)
 
     local creditText = DF.ui.Font(frame, 7, 'made by ' .. info.author, {.7, .7, .7}, 'CENTER')
-    creditText:SetPoint('BOTTOM', frame, 'BOTTOM', 33, 5)
+    creditText:SetPoint('BOTTOM', frame, 'BOTTOM', 33, 12)
+
+    local forkText = DF.ui.Font(frame, 7, "Reid's Fork", {.9, .75, .35}, 'CENTER')
+    forkText:SetPoint('TOP', creditText, 'BOTTOM', 0, -1)
 
     frame:SetScript('OnShow', function()
         local btn = getglobal('DF_MicroButton_MainMenu')

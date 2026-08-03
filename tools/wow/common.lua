@@ -164,7 +164,11 @@ function DF.common.CreateGoldString(money)
     local copper = floor(math.mod(money, 100))
     local string = ''
     if gold > 0 then string = string .. '|cffffffff' .. gold .. '|cffffd700g' end
-    if silver > 0 or gold > 0 then string = string .. '|cffffffff ' .. silver .. '|cffc7c7cfs' end
-    string = string .. '|cffffffff ' .. copper .. '|cffeda55fc'
+    if silver > 0 or gold > 0 then
+        if string ~= '' then string = string .. ' ' end
+        string = string .. '|cffffffff' .. silver .. '|cffc7c7cfs'
+    end
+    if string ~= '' then string = string .. ' ' end
+    string = string .. '|cffffffff' .. copper .. '|cffeda55fc'
     return string
 end
