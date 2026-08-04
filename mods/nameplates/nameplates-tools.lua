@@ -81,19 +81,21 @@ end
 
 function namesFacade:UpdateNativeNames()
     local active = self:HasAnyNames()
-    -- Mode 1 is Vanilla's target-locked mode: selected units retain their
-    -- ordinary world name, while the facsimile supplies the always-visible
-    -- names chosen in this menu.
-    self:SetNativeNames('UnitNameNPC', 'namesOriginalUnitNameNPC', '1', active)
-    self:SetNativeNames('UnitNamePlayer', 'namesOriginalUnitNamePlayer', '1', active)
-    self:SetNativeNames('UnitNameRenderMode', 'namesOriginalUnitNameRenderMode', '1', active)
+    -- Native names cannot filter by reaction and Turtle does not reliably
+    -- refresh UnitNameRenderMode at login. Keep them suppressed and let the
+    -- facsimile handle both persistent and target-only names.
+    self:SetNativeNames('UnitNameNPC', 'namesOriginalUnitNameNPC', '0', active)
+    self:SetNativeNames('UnitNamePlayer', 'namesOriginalUnitNamePlayer', '0', active)
+    -- Restore the render mode saved by the previous implementation, if any.
+    self:SetNativeNames('UnitNameRenderMode', 'namesOriginalUnitNameRenderMode', nil, false)
 end
 
 function namesFacade:UpdateEnginePlates()
     if not self.available then return end
 
+    local active = self:HasAnyNames()
     local userEnemyPlates = NamesFacade_IsEnabled(NAMEPLATES_ON)
-    if self:NeedsEnemyPlates() then
+    if active then
         if userEnemyPlates then
             self.enemyInjected = false
         elseif not self.enemyInjected then
@@ -108,7 +110,7 @@ function namesFacade:UpdateEnginePlates()
     end
 
     local userFriendPlates = NamesFacade_IsEnabled(FRIENDNAMEPLATES_ON)
-    if self:NeedsFriendPlates() then
+    if active then
         if userFriendPlates then
             self.friendInjected = false
         elseif not self.friendInjected then
@@ -134,6 +136,11 @@ function namesFacade:GetCategory(guid)
         return 'nonHostilePlayers', false
     end
 
+    local creatureType = UnitCreatureType(guid)
+    if creatureType and ((CRITTER and creatureType == CRITTER) or string.lower(creatureType) == 'critter') then
+        return 'critters', false
+    end
+
     local reaction = UnitReaction('player', guid)
     if reaction and reaction <= 3 then
         return 'hostileMobs', true
@@ -143,24 +150,33 @@ function namesFacade:GetCategory(guid)
     return 'npcs', false
 end
 
+function namesFacade:IsTarget(guid)
+    if not guid then return false end
+    local targetExists, targetGuid = UnitExists('target')
+    return targetExists and targetGuid == guid
+end
+
 -- Returns nil for a real/full nameplate, "name" for the facsimile, or "hide"
 -- for a plate which the engine had to create for another selected category.
 function namesFacade:GetMode(guid)
-    if not self.available then return nil end
+    if not self.available or not self:HasAnyNames() then return nil end
 
     local category, enemyPlate = self:GetCategory(guid)
     if not category then return nil end
 
     if enemyPlate then
-        if not self:NeedsEnemyPlates() or NamesFacade_IsEnabled(NAMEPLATES_ON) then
+        if NamesFacade_IsEnabled(NAMEPLATES_ON) then
             return nil
         end
     else
-        if not self:NeedsFriendPlates() or NamesFacade_IsEnabled(FRIENDNAMEPLATES_ON) then
+        if NamesFacade_IsEnabled(FRIENDNAMEPLATES_ON) then
             return nil
         end
     end
 
+    if self:IsTarget(guid) then
+        return 'name'
+    end
     return self.states[category] and 'name' or 'hide'
 end
 
