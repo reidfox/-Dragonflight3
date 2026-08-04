@@ -16,7 +16,7 @@ DF:NewDefaults('collector', {
 })
 
 DF:NewModule('collector', 1, 'PLAYER_ENTERING_WORLD', function()
-    local buttonsFound = {}
+    local buttonsFound = DF.lib.CreateButtonSkinner()
 
     local collectorFrame
     local expandButton = DF.ui.ExpandButton(UIParent, 28, 17, nil, function(isChecked)
@@ -41,35 +41,32 @@ DF:NewModule('collector', 1, 'PLAYER_ENTERING_WORLD', function()
 
     collectorFrame = CreateFrame('Frame', nil, UIParent)
     collectorFrame:SetSize(35, 35)
-    collectorFrame:SetPoint(DF.profile['collector']['anchorPoint'], expandButton, 'LEFT', -5, 0)
+    collectorFrame:SetPoint('RIGHT', expandButton, 'LEFT', -5, 0)
     local bg = collectorFrame:CreateTexture(nil, 'BACKGROUND')
     bg:SetTexture('Interface\\Buttons\\WHITE8X8')
     bg:SetAllPoints(collectorFrame)
-    bg:SetVertexColor(0, 0, 0, DF.profile['collector']['backgroundAlpha'] / 100)
-
-    local initialButtonScale = DF.profile['collector']['buttonScale'] / 100
 
     local corner = collectorFrame:CreateTexture(nil, 'OVERLAY')
     corner:SetTexture(media['tex:interface:golden_corner.blp'])
     corner:SetPoint('CENTER', collectorFrame, 'TOPLEFT', 2, -2)
-    corner:SetSize(20 * initialButtonScale, 20 * initialButtonScale)
+    corner:SetSize(20, 20)
 
     local cornerBL = collectorFrame:CreateTexture(nil, 'OVERLAY')
     cornerBL:SetTexture(media['tex:interface:golden_corner.blp'])
     cornerBL:SetPoint('CENTER', collectorFrame, 'BOTTOMLEFT', 2, 2)
-    cornerBL:SetSize(20 * initialButtonScale, 20 * initialButtonScale)
+    cornerBL:SetSize(20, 20)
     cornerBL:SetTexCoord(0, 1, 1, 0)
 
     local cornerTR = collectorFrame:CreateTexture(nil, 'OVERLAY')
     cornerTR:SetTexture(media['tex:interface:golden_corner.blp'])
     cornerTR:SetPoint('CENTER', collectorFrame, 'TOPRIGHT', -2, -2)
-    cornerTR:SetSize(20 * initialButtonScale, 20 * initialButtonScale)
+    cornerTR:SetSize(20, 20)
     cornerTR:SetTexCoord(1, 0, 0, 1)
 
     local cornerBR = collectorFrame:CreateTexture(nil, 'OVERLAY')
     cornerBR:SetTexture(media['tex:interface:golden_corner.blp'])
     cornerBR:SetPoint('CENTER', collectorFrame, 'BOTTOMRIGHT', -2, 2)
-    cornerBR:SetSize(20 * initialButtonScale, 20 * initialButtonScale)
+    cornerBR:SetSize(20, 20)
     cornerBR:SetTexCoord(1, 0, 1, 0)
 
     collectorFrame:Hide()
@@ -83,16 +80,8 @@ DF:NewModule('collector', 1, 'PLAYER_ENTERING_WORLD', function()
         local buttonList = {}
 
         for name, btn in pairs(buttons) do
-            -- IsShown checks the button's own state without treating the
-            -- collapsed collector parent as a hidden button.
-            if btn and btn.IsShown and btn:IsShown() then
-                table.insert(buttonList, btn)
-            end
+            table.insert(buttonList, btn)
         end
-
-        table.sort(buttonList, function(a, b)
-            return (a:GetName() or tostring(a)) < (b:GetName() or tostring(b))
-        end)
 
         local buttonCount = table.getn(buttonList)
 
@@ -120,40 +109,18 @@ DF:NewModule('collector', 1, 'PLAYER_ENTERING_WORLD', function()
             local btn = buttonList[i]
             local row = math.floor((i - 1) / buttonsPerRow)
             local col = math.mod(i - 1, buttonsPerRow)
-            local xOffset = padding + (col * (scaledCellSize + spacing))
-            local yOffset = -padding - (row * (scaledCellSize + spacing))
+            local xOffset = padding + (col * (cellSize + spacing))
+            local yOffset = -padding - (row * (cellSize + spacing))
 
-            local point, relativeTo, relativePoint, currentX, currentY = btn:GetPoint()
-            local misplaced = btn:GetParent() ~= collectorFrame or
-                point ~= 'TOPLEFT' or relativeTo ~= collectorFrame or relativePoint ~= 'TOPLEFT' or
-                math.abs((currentX or 0) - xOffset) > 0.1 or
-                math.abs((currentY or 0) - yOffset) > 0.1
+            btn:SetParent(collectorFrame)
+            btn:ClearAllPoints()
+            btn:SetPoint('TOPLEFT', collectorFrame, 'TOPLEFT', xOffset, yOffset)
+            btn:SetScale(buttonScale)
 
-            -- FuBar plugins can run a delayed ReadjustLocation after DF3 has
-            -- already collected them. Reassert the slot only when something
-            -- has actually moved the button back to the minimap.
-            if misplaced then
-                btn:SetParent(collectorFrame)
-                btn:ClearAllPoints()
-                btn:SetPoint('TOPLEFT', collectorFrame, 'TOPLEFT', xOffset, yOffset)
-            end
-            if btn:GetScale() ~= buttonScale then
-                btn:SetScale(buttonScale)
-            end
-            if btn:GetFrameStrata() ~= collectorFrame:GetFrameStrata() then
-                btn:SetFrameStrata(collectorFrame:GetFrameStrata())
-            end
-            if btn:GetFrameLevel() ~= collectorFrame:GetFrameLevel() + 1 then
-                btn:SetFrameLevel(collectorFrame:GetFrameLevel() + 1)
-            end
-
-            if not btn.collectorPrepared then
-                btn:SetMovable(false)
-                btn:RegisterForDrag()
-                btn:SetScript('OnDragStart', nil)
-                btn:SetScript('OnDragStop', nil)
-                btn.collectorPrepared = true
-            end
+            btn:SetMovable(false)
+            btn:RegisterForDrag()
+            btn:SetScript('OnDragStart', nil)
+            btn:SetScript('OnDragStop', nil)
 
             if not btn.collectorHooked then
                 local btnName = btn:GetName()
@@ -167,13 +134,11 @@ DF:NewModule('collector', 1, 'PLAYER_ENTERING_WORLD', function()
         end
     end
 
-    -- Addons using FuBar-style minimap plugins often create their buttons well
-    -- after PLAYER_ENTERING_WORLD. Keep this table live and relayout whenever
-    -- the skinner discovers one instead of taking a one-time startup snapshot.
-    buttonsFound = DF.lib.CreateButtonSkinner(function(buttons)
-        LayoutButtons(buttons)
-    end)
     DF.timers.delay(.1, function() LayoutButtons(buttonsFound) end)
+    -- The original skinner keeps discovering buttons for two seconds. Run the
+    -- original layout once more after that window so late FuBar buttons use the
+    -- same proven collection path as every other addon button.
+    DF.timers.delay(2.1, function() LayoutButtons(buttonsFound) end)
 
     -- callbacks
     local callbacks = {}

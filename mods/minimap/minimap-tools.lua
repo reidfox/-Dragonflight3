@@ -316,154 +316,106 @@ function DF.lib.CreateCustomPlayerArrow()
     return arrowFrame, arrowTex, playerArrow
 end
 
-function DF.lib.CreateButtonSkinner(onChanged)
-    local ignored = {'Note', 'JQuest', 'Naut_', 'MinimapIcon', 'GatherMatePin', 'WestPointer', 'Chinchilla_', 'SmartMinimapZoom', 'QuestieNote', 'smm', 'pfMiniMapPin', 'MiniMapBattlefieldFrame', 'pfMinimapButton', 'GatherNote', 'MiniNotePOI', 'FWGMinimapPOI', 'RecipeRadarMinimapIcon', 'MiniMapTracking', 'CartographerNotesPOI'}
-
-    local function IsIgnored(name)
-        if not name then return false end
-        local lowerName = strlower(name)
-        for _, prefix in ipairs(ignored) do
-            if strfind(lowerName, strlower(prefix)) == 1 then
-                return true
-            end
-        end
-        return false
-    end
-
-    local function IsButton(frame, uiParentChild)
-        if not frame or not frame.IsObjectType then return false end
-
-        local width = frame:GetWidth() or 0
-        local height = frame:GetHeight() or 0
-        if width <= 0 or height <= 0 or width > 50 or height > 50 then return false end
-        if not frame:IsVisible() then return false end
-
-        local name = frame:GetName()
-        if IsIgnored(name) then return false end
-
-        local hasClick = frame:GetScript('OnClick') or frame:GetScript('OnMouseDown') or frame:GetScript('OnMouseUp')
-        if not hasClick then return false end
-
-        -- A few older addons parent their minimap button to UIParent and only
-        -- anchor it to the minimap. Limit that broad scan to minimap/error
-        -- button names so normal action and menu buttons are never collected.
-        if uiParentChild then
-            if not name then return false end
-            local lowerName = strlower(name)
-            if not strfind(lowerName, 'minimap') and
-               not strfind(lowerName, 'improvederror') and
-               not strfind(lowerName, 'interfaceerror') and
-               not strfind(lowerName, 'ief') then
-                return false
-            end
-        end
-
-        if frame:IsObjectType('Button') then return true end
-        if frame:IsObjectType('Frame') and name then
-            local lowerName = strlower(name)
-            return strfind(lowerName, 'icon') or strfind(lowerName, 'button')
-        end
-        return false
-    end
-
+function DF.lib.CreateButtonSkinner()
     local function ScanForButtons()
+        local ignored = {'Note', 'JQuest', 'Naut_', 'MinimapIcon', 'GatherMatePin', 'WestPointer', 'Chinchilla_', 'SmartMinimapZoom', 'QuestieNote', 'smm', 'pfMiniMapPin', 'MiniMapBattlefieldFrame', 'pfMinimapButton', 'GatherNote', 'MiniNotePOI', 'FWGMinimapPOI', 'RecipeRadarMinimapIcon', 'MiniMapTracking', 'CartographerNotesPOI'}
         local buttons = {}
-        local visited = {}
 
-        local function AddButton(button)
-            if button and not visited[button] then
-                visited[button] = true
-                if IsButton(button, false) then
-                    table.insert(buttons, button)
-                end
-            end
-        end
-
-        local function ScanChildren(parent, depth)
-            if not parent or depth > 4 then return end
-            for _, child in ipairs({parent:GetChildren()}) do
-                if not visited[child] then
-                    visited[child] = true
-                    if IsButton(child, false) then
-                        table.insert(buttons, child)
+        for _, parent in ipairs({Minimap, MinimapBackdrop}) do
+            for i, child in ipairs({parent:GetChildren()}) do
+                local valid = false
+                if child:GetName() and child:IsVisible() and child:GetHeight() <= 40 and child:GetWidth() <= 40 and (child:IsFrameType('Button') or child:IsFrameType('Frame')) then
+                    local skip = false
+                    for _, v in ipairs(ignored) do
+                        if strfind(strlower(child:GetName()), strlower(v)) == 1 then skip = true break end
                     end
+                    if not skip then
+                        if child:IsFrameType('Button') and (child:GetScript('OnClick') or child:GetScript('OnMouseDown') or child:GetScript('OnMouseUp')) then
+                            valid = true
+                        elseif child:IsFrameType('Frame') and (strfind(strlower(child:GetName()), 'icon') or strfind(strlower(child:GetName()), 'button')) and (child:GetScript('OnMouseDown') or child:GetScript('OnMouseUp')) then
+                            valid = true
+                        end
+                    end
+                end
+
+                if valid then
+                    table.insert(buttons, child:GetName())
+                else
                     if child:GetNumChildren() > 0 then
-                        ScanChildren(child, depth + 1)
+                        for j, gchild in ipairs({child:GetChildren()}) do
+                            local gvalid = false
+                            if gchild:GetName() and gchild:IsVisible() and gchild:GetHeight() <= 40 and gchild:GetWidth() <= 40 and (gchild:IsFrameType('Button') or gchild:IsFrameType('Frame')) then
+                                local skip = false
+                                for _, v in ipairs(ignored) do
+                                    if strfind(strlower(gchild:GetName()), strlower(v)) == 1 then skip = true break end
+                                end
+                                if not skip then
+                                    if gchild:IsFrameType('Button') and (gchild:GetScript('OnClick') or gchild:GetScript('OnMouseDown') or gchild:GetScript('OnMouseUp')) then
+                                        gvalid = true
+                                    elseif gchild:IsFrameType('Frame') and (strfind(strlower(gchild:GetName()), 'icon') or strfind(strlower(gchild:GetName()), 'button')) and (gchild:GetScript('OnMouseDown') or gchild:GetScript('OnMouseUp')) then
+                                        gvalid = true
+                                    end
+                                end
+                            end
+                            if gvalid then
+                                table.insert(buttons, gchild:GetName())
+                            end
+                        end
                     end
                 end
             end
         end
-
-        ScanChildren(Minimap, 1)
-        ScanChildren(MinimapBackdrop, 1)
-
-        -- Compatibility path for buttons anchored to, rather than parented by,
-        -- the minimap (used by some ImprovedErrorFrame-era addons).
-        for _, child in ipairs({UIParent:GetChildren()}) do
-            if not visited[child] and IsButton(child, true) then
-                visited[child] = true
-                table.insert(buttons, child)
-            end
-        end
-
-        -- These FuBar plugins expose the real minimap frame directly. This
-        -- avoids relying on load order or on which embedded FuBarPlugin copy
-        -- won library activation. IEF is hidden until it actually has an error.
-        AddButton(NampowerOptions and NampowerOptions.minimapFrame)
-        AddButton(SuperAPIOptions and SuperAPIOptions.minimapFrame)
-        AddButton(IEFMinimapButton)
 
         return buttons
     end
 
-    local function SkinButton(btn)
-        local regions = {btn:GetRegions()}
-        for _, region in ipairs(regions) do
-            if region and region:GetObjectType() == 'Texture' then
-                local texture = region:GetTexture()
-                if type(texture) == 'string' and strfind(strlower(texture), 'minimap%-trackingborder') then
-                    region:SetTexture(nil)
-                    region:Hide()
+    local function SkinButtons(buttons)
+        for _, name in ipairs(buttons) do
+            local btn = _G[name]
+            if btn then
+                local regions = {btn:GetRegions()}
+                for _, r in ipairs(regions) do
+                    if r and r:GetObjectType() == 'Texture' then
+                        local tex = r:GetTexture()
+                        if tex and strfind(strlower(tex), 'minimap%-trackingborder') then
+                            r:SetTexture(nil)
+                            r:Hide()
+                        end
+                    end
                 end
+
+                local bgframe = CreateFrame('Frame', nil, btn)
+                bgframe:SetFrameStrata('BACKGROUND')
+                bgframe:SetFrameLevel(0)
+                bgframe:SetPoint('TOPLEFT', btn, 'TOPLEFT', 0, 0)
+                bgframe:SetPoint('BOTTOMRIGHT', btn, 'BOTTOMRIGHT', 0, 0)
+                local bg = bgframe:CreateTexture(nil, 'BACKGROUND')
+                bg:SetTexture(media['tex:generic:solid_small_round.blp'])
+                bg:SetAllPoints(bgframe)
+
+                local border = btn:CreateTexture(nil, 'OVERLAY')
+                border:SetTexture(media['tex:generic:generic_round_border_shiny.blp'])
+                border:SetPoint('TOPLEFT', btn, 'TOPLEFT', 2, -2)
+                border:SetPoint('BOTTOMRIGHT', btn, 'BOTTOMRIGHT', -2, 2)
             end
         end
-
-        local bgframe = CreateFrame('Frame', nil, btn)
-        bgframe:SetFrameStrata('BACKGROUND')
-        bgframe:SetFrameLevel(0)
-        bgframe:SetPoint('TOPLEFT', btn, 'TOPLEFT', 0, 0)
-        bgframe:SetPoint('BOTTOMRIGHT', btn, 'BOTTOMRIGHT', 0, 0)
-        local bg = bgframe:CreateTexture(nil, 'BACKGROUND')
-        bg:SetTexture(media['tex:generic:solid_small_round.blp'])
-        bg:SetAllPoints(bgframe)
-
-        local border = btn:CreateTexture(nil, 'OVERLAY')
-        border:SetTexture(media['tex:generic:generic_round_border_shiny.blp'])
-        border:SetPoint('TOPLEFT', btn, 'TOPLEFT', 2, -2)
-        border:SetPoint('BOTTOMRIGHT', btn, 'BOTTOMRIGHT', -2, 2)
     end
 
     local skinned = {}
-    local function UpdateButtons()
-        local changed = false
-        for _, btn in ipairs(ScanForButtons()) do
-            if not skinned[btn] then
-                SkinButton(btn)
-                skinned[btn] = btn
-                changed = true
+    local timerId = DF.timers.every(0.1, function()
+        local buttons = ScanForButtons()
+        for _, name in ipairs(buttons) do
+            if not skinned[name] then
+                local btn = _G[name]
+                SkinButtons({name})
+                skinned[name] = btn
             end
         end
-        if onChanged then
-            -- Also refresh unchanged buttons. Some addons set their minimap
-            -- point after our first scan, and the collector must reclaim it.
-            onChanged(skinned, changed)
-        end
-    end
+    end)
 
-    UpdateButtons()
-    -- Keep watching: FuBarPlugin-based addons may create or reveal their
-    -- minimap buttons several seconds after login or after an addon reload.
-    DF.timers.every(0.5, UpdateButtons)
+    DF.timers.delay(2, function()
+        DF.timers.cancel(timerId)
+    end)
 
     return skinned
 end
