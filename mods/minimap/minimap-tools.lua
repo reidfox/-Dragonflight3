@@ -331,7 +331,7 @@ function DF.lib.CreateButtonSkinner(onChanged)
     end
 
     local function IsButton(frame, uiParentChild)
-        if not frame or not frame.IsFrameType then return false end
+        if not frame or not frame.IsObjectType then return false end
 
         local width = frame:GetWidth() or 0
         local height = frame:GetHeight() or 0
@@ -358,8 +358,8 @@ function DF.lib.CreateButtonSkinner(onChanged)
             end
         end
 
-        if frame:IsFrameType('Button') then return true end
-        if frame:IsFrameType('Frame') and name then
+        if frame:IsObjectType('Button') then return true end
+        if frame:IsObjectType('Frame') and name then
             local lowerName = strlower(name)
             return strfind(lowerName, 'icon') or strfind(lowerName, 'button')
         end
