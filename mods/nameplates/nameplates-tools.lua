@@ -11,6 +11,345 @@ local plates = {
     lastTargetCountUpdate = 0
 }
 
+-- Text-only nameplates used by General > Tweaks > Names. Vanilla's world-name
+-- CVars cannot filter by reaction, but SuperWoW exposes a GUID on each
+-- nameplate. This lets us use the engine's plate anchors while drawing only a
+-- normal-looking name for the requested unit types.
+local namesFacade = {
+    registry = {},
+    states = {
+        nonHostileMobs = false,
+        hostileMobs = false,
+        hostilePlayers = false,
+        nonHostilePlayers = false,
+        npcs = false
+    },
+    nativeValues = {},
+    nativeSuppressed = {},
+    enemyInjected = false,
+    friendInjected = false,
+    lastChildCount = 0,
+    elapsed = 0,
+    engineElapsed = 0
+}
+
+local function NamesFacade_IsEnabled(value)
+    return value ~= nil and value ~= false and value ~= 0 and value ~= '0'
+end
+
+function namesFacade:NeedsEnemyPlates()
+    return self.states.nonHostileMobs or self.states.hostileMobs or self.states.hostilePlayers
+end
+
+function namesFacade:NeedsFriendPlates()
+    return self.states.nonHostilePlayers or self.states.npcs
+end
+
+function namesFacade:HasCreatureNames()
+    return self.states.nonHostileMobs or self.states.hostileMobs or self.states.npcs
+end
+
+function namesFacade:HasPlayerNames()
+    return self.states.hostilePlayers or self.states.nonHostilePlayers
+end
+
+function namesFacade:SetNativeNames(cvar, suppress)
+    local profileKey = cvar == 'UnitNameNPC' and 'namesOriginalUnitNameNPC' or 'namesOriginalUnitNamePlayer'
+    local profile = DF.profile and DF.profile.tweaks
+    if suppress then
+        if not self.nativeSuppressed[cvar] then
+            local savedValue = profile and profile[profileKey]
+            if savedValue == false or savedValue == nil then
+                savedValue = GetCVar(cvar)
+                if profile then
+                    profile[profileKey] = savedValue
+                end
+            end
+            self.nativeValues[cvar] = savedValue
+            self.nativeSuppressed[cvar] = true
+        end
+        if GetCVar(cvar) ~= '0' then
+            SetCVar(cvar, '0')
+        end
+    elseif self.nativeSuppressed[cvar] or (profile and profile[profileKey] ~= false) then
+        local savedValue = self.nativeValues[cvar] or (profile and profile[profileKey])
+        SetCVar(cvar, savedValue or '0')
+        self.nativeSuppressed[cvar] = nil
+        self.nativeValues[cvar] = nil
+        if profile then
+            profile[profileKey] = false
+        end
+    end
+end
+
+function namesFacade:UpdateNativeNames()
+    self:SetNativeNames('UnitNameNPC', self:HasCreatureNames())
+    self:SetNativeNames('UnitNamePlayer', self:HasPlayerNames())
+end
+
+function namesFacade:UpdateEnginePlates()
+    if not self.available then return end
+
+    local userEnemyPlates = NamesFacade_IsEnabled(NAMEPLATES_ON)
+    if self:NeedsEnemyPlates() then
+        if userEnemyPlates then
+            self.enemyInjected = false
+        elseif not self.enemyInjected then
+            ShowNameplates()
+            self.enemyInjected = true
+        end
+    else
+        if self.enemyInjected and not userEnemyPlates then
+            HideNameplates()
+        end
+        self.enemyInjected = false
+    end
+
+    local userFriendPlates = NamesFacade_IsEnabled(FRIENDNAMEPLATES_ON)
+    if self:NeedsFriendPlates() then
+        if userFriendPlates then
+            self.friendInjected = false
+        elseif not self.friendInjected then
+            ShowFriendNameplates()
+            self.friendInjected = true
+        end
+    else
+        if self.friendInjected and not userFriendPlates then
+            HideFriendNameplates()
+        end
+        self.friendInjected = false
+    end
+end
+
+function namesFacade:GetCategory(guid)
+    if not guid then return nil end
+
+    if UnitIsPlayer(guid) then
+        local reaction = UnitReaction('player', guid)
+        if UnitCanAttack('player', guid) or (reaction and reaction <= 3) then
+            return 'hostilePlayers', true
+        end
+        return 'nonHostilePlayers', false
+    end
+
+    local reaction = UnitReaction('player', guid)
+    if reaction and reaction <= 3 then
+        return 'hostileMobs', true
+    elseif reaction == 4 then
+        return 'nonHostileMobs', true
+    end
+    return 'npcs', false
+end
+
+-- Returns nil for a real/full nameplate, "name" for the facsimile, or "hide"
+-- for a plate which the engine had to create for another selected category.
+function namesFacade:GetMode(guid)
+    if not self.available then return nil end
+
+    local category, enemyPlate = self:GetCategory(guid)
+    if not category then return nil end
+
+    if enemyPlate then
+        if not self:NeedsEnemyPlates() or NamesFacade_IsEnabled(NAMEPLATES_ON) then
+            return nil
+        end
+    else
+        if not self:NeedsFriendPlates() or NamesFacade_IsEnabled(FRIENDNAMEPLATES_ON) then
+            return nil
+        end
+    end
+
+    return self.states[category] and 'name' or 'hide'
+end
+
+function namesFacade:EnsureFrame(frame)
+    local entry = self.registry[frame]
+    if entry then return entry end
+
+    local originalName
+    if frame.original then
+        originalName = frame.original.name
+    end
+    if not originalName then
+        local regions = { frame:GetRegions() }
+        for _, region in pairs(regions) do
+            if region:GetObjectType() == 'FontString' then
+                originalName = region
+                break
+            end
+        end
+    end
+
+    local holder = CreateFrame('Frame', nil, WorldFrame)
+    holder:SetSize(200, 20)
+    holder:SetFrameStrata('LOW')
+    if originalName then
+        holder:SetPoint('CENTER', originalName, 'CENTER', 0, 0)
+    else
+        holder:SetPoint('CENTER', frame, 'CENTER', 0, 15)
+    end
+
+    local nameText = holder:CreateFontString(nil, 'OVERLAY')
+    nameText:SetAllPoints(holder)
+    local font, size, flags
+    if originalName and originalName.GetFont then
+        font, size, flags = originalName:GetFont()
+    end
+    nameText:SetFont(font or 'Fonts\\FRIZQT__.TTF', size or 12, flags or 'OUTLINE')
+    nameText:SetJustifyH('CENTER')
+    holder:Hide()
+
+    local objects = {}
+    local children = { frame:GetChildren() }
+    local regions = { frame:GetRegions() }
+    for _, object in pairs(children) do
+        table.insert(objects, {object = object, alpha = object:GetAlpha()})
+    end
+    for _, object in pairs(regions) do
+        table.insert(objects, {object = object, alpha = object:GetAlpha()})
+    end
+
+    local mouseEnabled = true
+    if frame.IsMouseEnabled then
+        mouseEnabled = frame:IsMouseEnabled()
+    end
+
+    entry = {
+        holder = holder,
+        nameText = nameText,
+        objects = objects,
+        originalHidden = false,
+        mouseEnabled = mouseEnabled
+    }
+    self.registry[frame] = entry
+    return entry
+end
+
+function namesFacade:UpdateText(entry, guid)
+    entry.nameText:SetText(UnitName(guid) or '')
+    local r, g, b = GameTooltip_UnitColor(guid)
+    entry.nameText:SetTextColor(r or 1, g or 1, b or 1)
+end
+
+function namesFacade:HideOriginal(entry, frame)
+    for _, data in pairs(entry.objects) do
+        data.object:SetAlpha(0)
+    end
+    entry.originalHidden = true
+    frame:EnableMouse(false)
+end
+
+function namesFacade:RestoreOriginal(entry, frame)
+    if entry.originalHidden then
+        for _, data in pairs(entry.objects) do
+            data.object:SetAlpha(data.alpha)
+        end
+        entry.originalHidden = false
+        frame:EnableMouse(entry.mouseEnabled)
+    end
+end
+
+function namesFacade:ApplyCustom(frame, mode, guid)
+    local entry = self:EnsureFrame(frame)
+    frame.custom.frame:SetAlpha(0)
+    frame.custom.frame:EnableMouse(false)
+    if mode == 'name' and frame:IsShown() then
+        self:UpdateText(entry, guid)
+        entry.holder:SetAlpha(frame:GetAlpha())
+        entry.holder:Show()
+    else
+        entry.holder:Hide()
+    end
+end
+
+function namesFacade:RestoreCustom(frame)
+    local entry = self.registry[frame]
+    if entry then
+        entry.holder:Hide()
+    end
+end
+
+function namesFacade:ApplyFrame(frame)
+    local guid = frame:GetName(1)
+    local mode = self:GetMode(guid)
+    local entry = self:EnsureFrame(frame)
+
+    if frame.custom then
+        if mode then
+            self:ApplyCustom(frame, mode, guid)
+        else
+            self:RestoreCustom(frame)
+        end
+        return
+    end
+
+    if mode then
+        self:HideOriginal(entry, frame)
+        if mode == 'name' and frame:IsShown() then
+            self:UpdateText(entry, guid)
+            entry.holder:SetAlpha(frame:GetAlpha())
+            entry.holder:Show()
+        else
+            entry.holder:Hide()
+        end
+    else
+        entry.holder:Hide()
+        self:RestoreOriginal(entry, frame)
+    end
+end
+
+function namesFacade:Scan()
+    local count = WorldFrame:GetNumChildren()
+    if count ~= self.lastChildCount then
+        local children = { WorldFrame:GetChildren() }
+        for _, frame in pairs(children) do
+            if (plates.registry[frame] or plates:IsNamePlate(frame)) and not self.registry[frame] then
+                self:EnsureFrame(frame)
+            end
+        end
+        self.lastChildCount = count
+    end
+
+    for frame in pairs(self.registry) do
+        self:ApplyFrame(frame)
+    end
+end
+
+function namesFacade:SetOption(option, value)
+    self.states[option] = value and true or false
+    if not self.initialized then
+        self:Initialize()
+    end
+    self:UpdateNativeNames()
+    self:UpdateEnginePlates()
+end
+
+function namesFacade:Initialize()
+    if self.initialized then return end
+    self.initialized = true
+    self.available = dependencies.UnitXP and dependencies.SuperWoW and true or false
+    if not self.available then return end
+
+    local updater = CreateFrame('Frame')
+    updater:SetScript('OnUpdate', function()
+        namesFacade.elapsed = namesFacade.elapsed + arg1
+        namesFacade.engineElapsed = namesFacade.engineElapsed + arg1
+
+        if namesFacade.engineElapsed >= 0.2 then
+            namesFacade.engineElapsed = 0
+            namesFacade:UpdateNativeNames()
+            namesFacade:UpdateEnginePlates()
+        end
+        if namesFacade.elapsed >= 0.05 then
+            namesFacade.elapsed = 0
+            namesFacade:Scan()
+        end
+    end)
+    self.updater = updater
+end
+
+plates.namesFacade = namesFacade
+
 -- create
 function plates:CreateNameplate(frame) -- v2
     local guid = frame:GetName(1) -- SuperWoW: get nameplate GUID
@@ -464,9 +803,17 @@ function plates:SetupOnUpdate(frame) -- v1
     local healthbar = frame.custom.healthbar
 
     frame.custom.frame:SetScript('OnUpdate', function() -- stupid design double setscrpt, but idk for now, will rewrite anyways
+        local currentGuid = frame:GetName(1)
+        local facadeMode = plates.namesFacade and plates.namesFacade:GetMode(currentGuid)
+        if facadeMode then
+            plates.namesFacade:ApplyCustom(frame, facadeMode, currentGuid)
+            return
+        elseif plates.namesFacade then
+            plates.namesFacade:RestoreCustom(frame)
+        end
+
         -- hide friendly NPCs check
         -- // HIDE FRIENDLY NPC - produces flickering on nameplates that come in, need pre scan of some sort.
-        local currentGuid = frame:GetName(1)
         if plates.hideFriendlyNpcs and currentGuid then
             if not UnitIsPlayer(currentGuid) then
                 local reaction = UnitReaction('player', currentGuid)

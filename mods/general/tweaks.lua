@@ -4,11 +4,18 @@ DF:NewDefaults('tweaks', {
     enabled = {value = true},
     version = {value = '1.1'},
     gui = {
-        {tab = 'general', subtab = 'tweaks', 'General'},
+        {tab = 'general', subtab = 'tweaks', 'General', 'Names'},
     },
     stanceDancing = {value = true, metadata = {element = 'checkbox', category = 'General', indexInCategory = 1, description = 'Automatically switch stance when casting spells'}},
     autoForm = {value = true, metadata = {element = 'checkbox', category = 'General', indexInCategory = 2, description = 'Extend stance dancing to cancel active forms for druids and rogues', dependency = {key = 'stanceDancing', state = true}}},
     autoDismount = {value = true, metadata = {element = 'checkbox', category = 'General', indexInCategory = 3, description = 'Automatically dismount when casting spells'}},
+    namesNonHostileMobs = {value = false, metadata = {element = 'checkbox', category = 'Names', indexInCategory = 1, description = 'Non-hostile mobs'}},
+    namesHostileMobs = {value = false, metadata = {element = 'checkbox', category = 'Names', indexInCategory = 2, description = 'Hostile mobs'}},
+    namesHostilePlayers = {value = false, metadata = {element = 'checkbox', category = 'Names', indexInCategory = 3, description = 'Hostile players'}},
+    namesNonHostilePlayers = {value = false, metadata = {element = 'checkbox', category = 'Names', indexInCategory = 4, description = 'Non-hostile players'}},
+    namesNpcs = {value = false, metadata = {element = 'checkbox', category = 'Names', indexInCategory = 5, description = 'NPCs'}},
+    namesOriginalUnitNameNPC = {value = false},
+    namesOriginalUnitNamePlayer = {value = false},
 
 })
 
@@ -89,6 +96,33 @@ DF:NewModule('tweaks', 1, function()
             dismount:UnregisterEvent('UI_ERROR_MESSAGE')
             dismount:SetScript('OnEvent', nil)
         end
+    end
+
+    local function SetNamesOption(option, value)
+        local plates = DF.setups.plates
+        if plates and plates.namesFacade then
+            plates.namesFacade:SetOption(option, value)
+        end
+    end
+
+    callbacks.namesNonHostileMobs = function(value)
+        SetNamesOption('nonHostileMobs', value)
+    end
+
+    callbacks.namesHostileMobs = function(value)
+        SetNamesOption('hostileMobs', value)
+    end
+
+    callbacks.namesHostilePlayers = function(value)
+        SetNamesOption('hostilePlayers', value)
+    end
+
+    callbacks.namesNonHostilePlayers = function(value)
+        SetNamesOption('nonHostilePlayers', value)
+    end
+
+    callbacks.namesNpcs = function(value)
+        SetNamesOption('npcs', value)
     end
 
     DF:NewCallbacks('tweaks', callbacks)
