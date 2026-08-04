@@ -444,28 +444,22 @@ end
 function setup:SetSimpleBarFillOffset(unitFrame, bar, kind, enabled)
     local yOffset = enabled and 3 or 0
     local cropPlayerPower = enabled and unitFrame.unit == 'player' and kind == 'power'
-    local cropPetPower = enabled and unitFrame.unit == 'pet' and kind == 'power'
-    local cropMainHealth = enabled and kind == 'health'
-        and (unitFrame.unit == 'player' or unitFrame.unit == 'target')
-    local cropPetHealth = enabled and unitFrame.unit == 'pet' and kind == 'health'
+    local cropSimpleHealth = enabled and kind == 'health'
 
     bar.fillYOffset = yOffset
     bar.fillTexCoordTop = cropPlayerPower and 2/16 or 0
-    -- healthDF2.tga has five fully transparent bottom rows, while the compact
-    -- Pet texture has two baked-in dark edge rows. Crop those permanent gaps;
-    -- changing the frame height cannot remove pixels inside the source art.
+    -- Every Simple health bar now uses Reforged's healthDF2.tga, which has
+    -- five fully transparent bottom rows. Crop those permanent gaps; changing
+    -- the frame height cannot remove pixels inside the source artwork.
     bar.fillTexCoordBottom = cropPlayerPower and 14/16
-        or (cropPetPower and 15/16)
-        or (cropMainHealth and 27/32)
-        or (cropPetHealth and 14/16)
+        or (cropSimpleHealth and 27/32)
         or 1
 
-    -- The compact mana artwork is baked blue. Desaturating only the Pet fill
-    -- lets the standard focus color tint it orange again; reset this whenever
-    -- another texture style is selected.
     if kind == 'power' and unitFrame.unit == 'pet' then
-        bar.fill:SetDesaturated(enabled and 1 or nil)
-        bar.bg:SetDesaturated(enabled and 1 or nil)
+        -- The source-correct power art is already neutral; make sure no stale
+        -- desaturation state can suppress its Blizzard focus-orange tint.
+        bar.fill:SetDesaturated(nil)
+        bar.bg:SetDesaturated(nil)
     end
 
     bar.fill:ClearAllPoints()
@@ -509,19 +503,17 @@ function setup:SetSimpleTargetTargetNameOffset(unitFrame, enabled)
 end
 
 function setup:GetSimpleHealthTexture(unitFrame)
-    if unitFrame.unit == 'player' or unitFrame.unit == 'target' or string.find(unitFrame.unit, 'party') then
-        return self.textures.reforgedHealth
-    end
-    return self.textures.reforgedMiniHealth
+    -- Reforged uses healthDF2 for Player, Target, Pet and Target-of-Target.
+    return self.textures.reforgedHealth
 end
 
 function setup:GetSimplePowerTexture(unitFrame)
     if unitFrame.unit == 'player' then
         return self.textures.reforgedPlayerPower
-    elseif unitFrame.unit == 'target' or string.find(unitFrame.unit, 'party') then
-        return self.textures.reforgedTargetPower
     end
-    return self.textures.reforgedMiniPower
+    -- The Target texture is neutral grayscale and is Reforged's source asset
+    -- for Pet/ToT. Unlike the old mini texture, it accepts orange focus tint.
+    return self.textures.reforgedTargetPower
 end
 
 function setup:ApplyReforgedSkin(unitFrame)
@@ -660,12 +652,12 @@ function setup:ApplyReforgedSkin(unitFrame)
         -- user resize cannot make the two bars drift apart from the artwork.
         unitFrame.hpBar:SetPoint('LEFT', unitFrame, 'LEFT', 40 * compactScale, 1 * compactScale)
         unitFrame.hpBar:SetFillDirection('LEFT_TO_RIGHT')
-        unitFrame.hpBar:SetTextures(self.textures.reforgedMiniHealth, self.textures.reforgedMiniHealth)
+        unitFrame.hpBar:SetTextures(self.textures.reforgedHealth, self.textures.reforgedHealth)
         unitFrame.hpBar.bg:SetVertexColor(0.08, 0.08, 0.08, 0.9)
         unitFrame.powerBar:SetSize(60 * compactScale, 7 * compactScale)
         unitFrame.powerBar:SetPoint('TOPLEFT', unitFrame.hpBar, 'BOTTOMLEFT', 0, 1 * compactScale)
         unitFrame.powerBar:SetFillDirection('LEFT_TO_RIGHT')
-        unitFrame.powerBar:SetTextures(self.textures.reforgedMiniPower, self.textures.reforgedMiniPower)
+        unitFrame.powerBar:SetTextures(self.textures.reforgedTargetPower, self.textures.reforgedTargetPower)
         unitFrame.powerBar.bg:SetVertexColor(0.08, 0.08, 0.08, 0.9)
         unitFrame.infoBg:SetSize(60 * compactScale, 14 * compactScale)
         unitFrame.infoBg:SetPoint('TOPLEFT', unitFrame.reforgedFrame, 'TOPLEFT', 40 * compactScale, -4 * compactScale)
