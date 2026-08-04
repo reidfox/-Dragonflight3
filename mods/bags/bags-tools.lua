@@ -1042,8 +1042,10 @@ function setup:GetBagSortData(bag, slot)
     if not link then return nil end
 
     local name, _, quality, itemLevel, _, itemType, itemSubType = GetItemInfo(link)
+    local _, _, itemID = string.find(link, 'item:(%d+)')
     return {
         link = link,
+        itemID = tonumber(itemID) or 0,
         name = name or link,
         quality = quality or 0,
         itemLevel = itemLevel or 0,
@@ -1062,6 +1064,11 @@ function setup:BagItemSortsBefore(a, b)
     if a.name ~= b.name then return a.name < b.name end
     if a.quality ~= b.quality then return a.quality > b.quality end
     if a.itemLevel ~= b.itemLevel then return a.itemLevel > b.itemLevel end
+    -- Guda uses a deterministic item-ID tiebreaker before preserving equal
+    -- stacks. Without one, Lua's unstable table.sort can alternate otherwise
+    -- equal items between passes and make a sorted bag reshuffle forever.
+    if a.itemID ~= b.itemID then return a.itemID < b.itemID end
+    if a.link ~= b.link then return a.link < b.link end
     return false
 end
 
@@ -1146,17 +1153,11 @@ function setup:GetBagSortGroups()
 end
 
 function setup:HasPendingBagSortLocks()
-    for bag = 0, 4 do
-        if not self:IsBagSortIgnoredBag(bag) then
-            local slots = GetContainerNumSlots(bag) or 0
-            for slot = 1, slots do
-                local slotKey = self:GetBagSortSlotKey(bag, slot)
-                local texture, _, locked = GetContainerItemInfo(bag, slot)
-                if texture and locked and (not self.sortFixedSlots or not self.sortFixedSlots[slotKey]) then
-                    return true
-                end
-            end
-        end
+    if not self.sortPendingSlots then return false end
+    for i = 1, table.getn(self.sortPendingSlots) do
+        local position = self.sortPendingSlots[i]
+        local _, _, locked = GetContainerItemInfo(position.bag, position.slot)
+        if locked then return true end
     end
     return false
 end
@@ -1197,32 +1198,69 @@ function setup:FindBagSortSource(group, startIndex, desiredLink)
 end
 
 function setup:MoveBagSortItem(source, target)
+    local sourceLink = GetContainerItemLink(source.bag, source.slot)
+    if not sourceLink then
+        self:BuildBagSortPlan()
+        return true
+    end
+
+    -- Guda validates both directions before touching the cursor. DF3 ignores
+    -- specialized bags entirely, but retain this family guard in case the
+    -- client has not cached a bag's item information yet.
+    local sourceFamily = self:GetBagSortFamily(source.bag)
+    local targetFamily = self:GetBagSortFamily(target.bag)
+    if source.bag ~= 0 and sourceFamily ~= 0
+        or target.bag ~= 0 and targetFamily ~= 0
+        or sourceFamily ~= targetFamily then
+        self.sortFixedSlots[self:GetBagSortSlotKey(target.bag, target.slot)] = true
+        self.sortSkippedLockedItems = true
+        self:BuildBagSortPlan()
+        return true
+    end
+
     ClearCursor()
     PickupContainerItem(source.bag, source.slot)
     if not CursorHasItem() then
         self.sortFixedSlots[self:GetBagSortSlotKey(source.bag, source.slot)] = true
         self.sortSkippedLockedItems = true
         self:BuildBagSortPlan()
-        self.sortStarted = GetTime()
         return true
     end
 
     PickupContainerItem(target.bag, target.slot)
     if CursorHasItem() then PickupContainerItem(source.bag, source.slot) end
-    if CursorHasItem() then ClearCursor() end
+    if CursorHasItem() then
+        ClearCursor()
+        self.sortActive = false
+        self.sortAborted = true
+        self.sortWaitingForUnlock = false
+        self.sortPendingSlots = nil
+        DEFAULT_CHAT_FRAME:AddMessage('Clean bags stopped because an item could not be moved safely')
+        return false
+    end
 
+    self.sortPendingSlots = {source, target}
     self.sortWaitingForUnlock = true
-    self.sortStarted = GetTime()
+    self.sortMoveStarted = GetTime()
     return true
 end
 
 function setup:SortBagsStep()
     if self.sortWaitingForUnlock then
-        if CursorHasItem() or self:HasPendingBagSortLocks() then
+        -- Ported from Guda's sort scheduler: give the server a real minimum
+        -- processing window before trusting the lock state. The old 0.1s loop
+        -- routinely read stale slots and started moving already-sorted items.
+        if GetTime() - self.sortMoveStarted < 0.5 then
             return true
         end
+        if CursorHasItem() or self:HasPendingBagSortLocks() then return true end
+
         self.sortWaitingForUnlock = false
-        self.sortStarted = GetTime()
+        self.sortPendingSlots = nil
+        -- Every completed move changes two slots. Re-scan now instead of
+        -- continuing through a plan built from the pre-swap bag contents.
+        self:BuildBagSortPlan()
+        return true
     end
 
     while self.sortPlan and self.sortPlanIndex <= table.getn(self.sortPlan) do
@@ -1239,7 +1277,9 @@ function setup:SortBagsStep()
                     local _, _, targetLocked = GetContainerItemInfo(target.bag, target.slot)
                     local _, _, sourceLocked = GetContainerItemInfo(source.bag, source.slot)
                     if targetLocked or sourceLocked then
+                        self.sortPendingSlots = {source, target}
                         self.sortWaitingForUnlock = true
+                        self.sortMoveStarted = GetTime()
                         return true
                     else
                         return self:MoveBagSortItem(source, target)
@@ -1266,7 +1306,9 @@ function setup:SortBags()
 
     self.sortFixedSlots = {}
     self.sortSkippedLockedItems = false
+    self.sortAborted = false
     self.sortWaitingForUnlock = false
+    self.sortPendingSlots = nil
     for bag = 0, 4 do
         if not self:IsBagSortIgnoredBag(bag) then
             local slots = GetContainerNumSlots(bag) or 0
@@ -1286,19 +1328,31 @@ function setup:SortBags()
         self.sortFrame:SetScript('OnUpdate', function()
             if not setup.sortActive then return end
             this.elapsed = this.elapsed + arg1
-            if this.elapsed < 0.1 then return end
+            if this.elapsed < 0.05 then return end
             this.elapsed = 0
-            if GetTime() - setup.sortStarted > 15 then
+
+            if setup.sortWaitingForUnlock and GetTime() - setup.sortMoveStarted > 3 then
                 setup.sortActive = false
                 setup.sortWaitingForUnlock = false
+                setup.sortPendingSlots = nil
                 DEFAULT_CHAT_FRAME:AddMessage('Clean bags paused because an item stayed locked')
+                return
+            end
+            if GetTime() - setup.sortSessionStarted > 120 then
+                setup.sortActive = false
+                setup.sortWaitingForUnlock = false
+                setup.sortPendingSlots = nil
+                DEFAULT_CHAT_FRAME:AddMessage('Clean bags stopped after reaching its safety limit')
                 return
             end
             if not setup:SortBagsStep() then
                 setup.sortActive = false
                 setup.sortWaitingForUnlock = false
+                setup.sortPendingSlots = nil
                 setup.sortPlan = nil
-                if setup.sortSkippedLockedItems then
+                if setup.sortAborted then
+                    setup.sortAborted = false
+                elseif setup.sortSkippedLockedItems then
                     DEFAULT_CHAT_FRAME:AddMessage('Bags cleaned; locked items were left in place')
                 else
                     DEFAULT_CHAT_FRAME:AddMessage('Bags cleaned, grouped, and compacted')
@@ -1308,7 +1362,8 @@ function setup:SortBags()
     end
 
     self.sortFrame.elapsed = 0
-    self.sortStarted = GetTime()
+    self.sortSessionStarted = GetTime()
+    self.sortMoveStarted = self.sortSessionStarted
     self:BuildBagSortPlan()
     self.sortActive = true
 end

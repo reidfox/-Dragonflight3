@@ -9,7 +9,8 @@ DF:NewDefaults('xprep', {
     },
 
     xpBarEnabled = {value = true, metadata = {element = 'checkbox', category = 'XP General', indexInCategory = 1, description = 'Toggle visibility of the experience bar'}},
-    xpBarFadeOutDelay = {value = 0, metadata = {element = 'slider', category = 'XP General', indexInCategory = 2, description = 'Seconds before fading out after mouse leaves (0 = disabled)', min = 0, max = 10, stepSize = 0.5, dependency = {key = 'xpBarEnabled', state = true}}},
+    xpBarClassic = {value = false, metadata = {element = 'checkbox', category = 'XP General', indexInCategory = 2, description = 'Classic EXP bar (rested color and endpoint marker)', dependency = {key = 'xpBarEnabled', state = true}}},
+    xpBarFadeOutDelay = {value = 0, metadata = {element = 'slider', category = 'XP General', indexInCategory = 3, description = 'Seconds before fading out after mouse leaves (0 = disabled)', min = 0, max = 10, stepSize = 0.5, dependency = {key = 'xpBarEnabled', state = true}}},
     xpBarWidth = {value = 350, metadata = {element = 'slider', category = 'XP Size', indexInCategory = 1, description = 'Width of the experience bar', min = 100, max = 800, stepSize = 10, dependency = {key = 'xpBarEnabled', state = true}}},
     xpBarHeight = {value = 6, metadata = {element = 'slider', category = 'XP Size', indexInCategory = 2, description = 'Height of the experience bar', min = 2, max = 32, stepSize = 1, dependency = {key = 'xpBarEnabled', state = true}}},
     xpBarAlpha = {value = 1, metadata = {element = 'slider', category = 'XP Appearance', indexInCategory = 1, description = 'Transparency of the experience bar', min = 0, max = 1, stepSize = 0.1, dependency = {key = 'xpBarEnabled', state = true}}},
@@ -93,6 +94,15 @@ DF:NewModule('xprep', 1, 'PLAYER_LOGIN', function()
     end
     ApplyReforgedBorder(xpbar)
 
+    -- Vanilla's exhaustion tick marks where the current rested bonus ends.
+    -- Keep it parented to DF_XPBar so Edit Mode movement, scaling, and fading
+    -- continue to affect the entire bar as one element.
+    local xpRestedMarker = xpbar:CreateTexture(nil, 'OVERLAY')
+    xpRestedMarker:SetTexture('Interface\\Buttons\\WHITE8X8')
+    xpRestedMarker:SetVertexColor(0.9, 0.9, 1, 1)
+    xpRestedMarker:SetWidth(2)
+    xpRestedMarker:Hide()
+
     local xpText = xpbar:CreateFontString(nil, 'OVERLAY')
     local xpFont = DF.profile['xprep']['xpBarTextFont']
     if strfind(xpFont, 'font:') then
@@ -152,6 +162,34 @@ DF:NewModule('xprep', 1, 'PLAYER_LOGIN', function()
     local xpTextHideTimer = nil
     local repTextHideTimer = nil
 
+    local function UpdateClassicXPStyle(xp, maxxp, rested)
+        if not DF.profile['xprep']['xpBarClassic'] then
+            local customColor = DF.profile['xprep']['xpBarColour']
+            xpbar:SetFillColor(customColor[1], customColor[2], customColor[3], customColor[4])
+            xpRestedMarker:Hide()
+            return
+        end
+
+        if rested and rested > 0 then
+            -- Blizzard's classic rested and normal XP colors.
+            xpbar:SetFillColor(0, 0.39, 0.88, 1)
+        else
+            xpbar:SetFillColor(0.58, 0, 0.55, 1)
+        end
+
+        if rested and rested > 0 and maxxp and maxxp > 0 then
+            local restedEnd = math.min(xp + rested, maxxp)
+            local markerX = xpbar:GetWidth() * (restedEnd / maxxp)
+            markerX = math.max(1, math.min(markerX, xpbar:GetWidth() - 1))
+            xpRestedMarker:ClearAllPoints()
+            xpRestedMarker:SetPoint('CENTER', xpbar, 'LEFT', markerX, 0)
+            xpRestedMarker:SetHeight(math.max(xpbar:GetHeight() + 4, 8))
+            xpRestedMarker:Show()
+        else
+            xpRestedMarker:Hide()
+        end
+    end
+
     local function UpdateXP()
         if UnitLevel('player') == 60 then
             xpbar:Hide()
@@ -162,8 +200,10 @@ DF:NewModule('xprep', 1, 'PLAYER_LOGIN', function()
         end
         local xp = UnitXP('player')
         local maxxp = UnitXPMax('player')
+        local rested = GetXPExhaustion()
         xpbar.max = maxxp
         xpbar:SetValue(xp)
+        UpdateClassicXPStyle(xp, maxxp, rested)
 
         if xp ~= lastXP then
             lastXP = xp
@@ -198,7 +238,6 @@ DF:NewModule('xprep', 1, 'PLAYER_LOGIN', function()
             xpText:Hide()
         end
 
-        local rested = GetXPExhaustion()
         if rested and DF.profile['xprep']['xpBarShowRested'] then
             local text
             local format = DF.profile['xprep']['xpBarRestedFormat']
@@ -431,11 +470,13 @@ DF:NewModule('xprep', 1, 'PLAYER_LOGIN', function()
     callbacks.xpBarWidth = function(value)
         xpbar:SetWidth(value)
         xpbar:Update()
+        UpdateXP()
     end
 
     callbacks.xpBarHeight = function(value)
         xpbar:SetHeight(value)
         xpbar:Update()
+        UpdateXP()
     end
 
     callbacks.xpBarAlpha = function(value)
@@ -443,7 +484,15 @@ DF:NewModule('xprep', 1, 'PLAYER_LOGIN', function()
     end
 
     callbacks.xpBarColour = function(value)
-        xpbar:SetFillColor(value[1], value[2], value[3], value[4])
+        if DF.profile['xprep']['xpBarClassic'] then
+            UpdateXP()
+        else
+            xpbar:SetFillColor(value[1], value[2], value[3], value[4])
+        end
+    end
+
+    callbacks.xpBarClassic = function(value)
+        UpdateXP()
     end
 
     callbacks.repBarEnabled = function(value)

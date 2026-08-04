@@ -444,10 +444,18 @@ end
 function setup:SetSimpleBarFillOffset(unitFrame, bar, kind, enabled)
     local yOffset = enabled and 3 or 0
     local cropPlayerPower = enabled and unitFrame.unit == 'player' and kind == 'power'
+    local cropPetPower = enabled and unitFrame.unit == 'pet' and kind == 'power'
+    local cropMainHealth = enabled and kind == 'health'
+        and (unitFrame.unit == 'player' or unitFrame.unit == 'target')
 
     bar.fillYOffset = yOffset
     bar.fillTexCoordTop = cropPlayerPower and 2/16 or 0
-    bar.fillTexCoordBottom = cropPlayerPower and 14/16 or 1
+    -- healthDF2.tga has five fully transparent rows at its bottom. Cropping
+    -- them prevents a permanent gap that cannot be corrected with bar height.
+    bar.fillTexCoordBottom = cropPlayerPower and 14/16
+        or (cropPetPower and 15/16)
+        or (cropMainHealth and 27/32)
+        or 1
 
     bar.fill:ClearAllPoints()
     bar.fill:SetPoint('TOPLEFT', bar, 'TOPLEFT', 0, yOffset)
@@ -470,9 +478,11 @@ function setup:SetSimplePowerBarOffset(unitFrame, enabled)
     local anchor = bar.simpleBasePoint
     bar:SetHeight(bar.simpleBaseHeight - (enabled and 2 or 0))
     bar:ClearAllPoints()
-    -- The source power-bar artwork has transparent padding above its visible
+    -- The Simple source artwork has transparent padding above its visible
     -- edge, so four anchor pixels produce roughly a two-pixel visual lift.
-    bar:SetPoint(anchor[1], anchor[2], anchor[3], anchor[4], anchor[5] + 4)
+    -- Restore the saved, unmodified anchor for every other texture style.
+    local yOffset = enabled and 4 or 0
+    bar:SetPoint(anchor[1], anchor[2], anchor[3], anchor[4], anchor[5] + yOffset)
 end
 
 function setup:SetSimpleTargetTargetNameOffset(unitFrame, enabled)
