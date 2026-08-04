@@ -447,15 +447,26 @@ function setup:SetSimpleBarFillOffset(unitFrame, bar, kind, enabled)
     local cropPetPower = enabled and unitFrame.unit == 'pet' and kind == 'power'
     local cropMainHealth = enabled and kind == 'health'
         and (unitFrame.unit == 'player' or unitFrame.unit == 'target')
+    local cropPetHealth = enabled and unitFrame.unit == 'pet' and kind == 'health'
 
     bar.fillYOffset = yOffset
     bar.fillTexCoordTop = cropPlayerPower and 2/16 or 0
-    -- healthDF2.tga has five fully transparent rows at its bottom. Cropping
-    -- them prevents a permanent gap that cannot be corrected with bar height.
+    -- healthDF2.tga has five fully transparent bottom rows, while the compact
+    -- Pet texture has two baked-in dark edge rows. Crop those permanent gaps;
+    -- changing the frame height cannot remove pixels inside the source art.
     bar.fillTexCoordBottom = cropPlayerPower and 14/16
         or (cropPetPower and 15/16)
         or (cropMainHealth and 27/32)
+        or (cropPetHealth and 14/16)
         or 1
+
+    -- The compact mana artwork is baked blue. Desaturating only the Pet fill
+    -- lets the standard focus color tint it orange again; reset this whenever
+    -- another texture style is selected.
+    if kind == 'power' and unitFrame.unit == 'pet' then
+        bar.fill:SetDesaturated(enabled and 1 or nil)
+        bar.bg:SetDesaturated(enabled and 1 or nil)
+    end
 
     bar.fill:ClearAllPoints()
     bar.fill:SetPoint('TOPLEFT', bar, 'TOPLEFT', 0, yOffset)
@@ -2732,6 +2743,7 @@ function setup:GenerateCallbacks()
                     setup:SetSimpleBarWrapper(portrait, portrait.powerBar, 'power', value == 'Simple Style')
                     setup:SetSimplePowerBarOffset(portrait, value == 'Simple Style')
                     setup:SetSimpleBarFillOffset(portrait, portrait.powerBar, 'power', value == 'Simple Style')
+                    if portrait.unit == 'pet' then setup:UpdatePowerBarColor(portrait) end
                     setup:UpdateBarText(portrait)
                 end
             end
