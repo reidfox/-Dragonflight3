@@ -23,6 +23,7 @@ DF:NewDefaults('tweaks', {
     namesTextScale = {value = 100, metadata = {element = 'slider', category = 'Names', indexInCategory = 7, description = 'Name text size (%)', min = 50, max = 200, stepSize = 5}},
     namesOriginalUnitNameNPC = {value = false},
     namesOriginalUnitNamePlayer = {value = false},
+    namesOriginalUnitNameRenderMode = {value = false},
 
 })
 

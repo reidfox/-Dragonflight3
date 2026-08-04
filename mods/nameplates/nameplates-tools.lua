@@ -47,18 +47,13 @@ function namesFacade:NeedsFriendPlates()
     return self.states.nonHostilePlayers or self.states.npcs
 end
 
-function namesFacade:HasCreatureNames()
-    return self.states.nonHostileMobs or self.states.hostileMobs or self.states.npcs
+function namesFacade:HasAnyNames()
+    return self:NeedsEnemyPlates() or self:NeedsFriendPlates()
 end
 
-function namesFacade:HasPlayerNames()
-    return self.states.hostilePlayers or self.states.nonHostilePlayers
-end
-
-function namesFacade:SetNativeNames(cvar, suppress)
-    local profileKey = cvar == 'UnitNameNPC' and 'namesOriginalUnitNameNPC' or 'namesOriginalUnitNamePlayer'
+function namesFacade:SetNativeNames(cvar, profileKey, overrideValue, override)
     local profile = DF.profile and DF.profile.tweaks
-    if suppress then
+    if override then
         if not self.nativeSuppressed[cvar] then
             local savedValue = profile and profile[profileKey]
             if savedValue == false or savedValue == nil then
@@ -70,8 +65,8 @@ function namesFacade:SetNativeNames(cvar, suppress)
             self.nativeValues[cvar] = savedValue
             self.nativeSuppressed[cvar] = true
         end
-        if GetCVar(cvar) ~= '0' then
-            SetCVar(cvar, '0')
+        if GetCVar(cvar) ~= overrideValue then
+            SetCVar(cvar, overrideValue)
         end
     elseif self.nativeSuppressed[cvar] or (profile and profile[profileKey] ~= false) then
         local savedValue = self.nativeValues[cvar] or (profile and profile[profileKey])
@@ -85,8 +80,13 @@ function namesFacade:SetNativeNames(cvar, suppress)
 end
 
 function namesFacade:UpdateNativeNames()
-    self:SetNativeNames('UnitNameNPC', self:HasCreatureNames())
-    self:SetNativeNames('UnitNamePlayer', self:HasPlayerNames())
+    local active = self:HasAnyNames()
+    -- Mode 1 is Vanilla's target-locked mode: selected units retain their
+    -- ordinary world name, while the facsimile supplies the always-visible
+    -- names chosen in this menu.
+    self:SetNativeNames('UnitNameNPC', 'namesOriginalUnitNameNPC', '1', active)
+    self:SetNativeNames('UnitNamePlayer', 'namesOriginalUnitNamePlayer', '1', active)
+    self:SetNativeNames('UnitNameRenderMode', 'namesOriginalUnitNameRenderMode', '1', active)
 end
 
 function namesFacade:UpdateEnginePlates()
