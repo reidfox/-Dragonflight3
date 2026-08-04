@@ -234,7 +234,12 @@ DF:NewModule('nameplates', 1, 'PLAYER_ENTERING_WORLD', function()
     end
 
     callbacks.overlapNameplates = function(value)
-        plates.overlapEnabled = value
+        plates.overlapEnabled = value and true or false
+        -- Apply the new collision footprint immediately. Previously, plates
+        -- left at 1x1 could remain permanently overlapped after unchecking.
+        for frame in pairs(plates.registry) do
+            plates:ApplyOverlapState(frame)
+        end
     end
 
     callbacks.showDistance = function(value)

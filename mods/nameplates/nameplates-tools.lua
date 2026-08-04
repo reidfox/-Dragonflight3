@@ -866,12 +866,33 @@ function plates:ExtractElements(frame)
     --debugprint("[EXTRACT] Stored level: "..(frame.original.level and "OK" or "NIL"))
 end
 
+function plates:ApplyOverlapState(frame)
+    if not frame or not frame.custom or not frame.custom.frame then return end
+
+    local width, height
+    if self.overlapEnabled then
+        width, height = 1, 1
+    else
+        width = frame.custom.frame:GetWidth()
+        height = frame.custom.frame:GetHeight()
+    end
+
+    if frame:GetWidth() ~= width or frame:GetHeight() ~= height then
+        frame:SetSize(width, height)
+    end
+    frame.custom.lastWidth = width
+end
+
 function plates:SetupOnUpdate(frame) -- v1
     local origBar = frame.original.healthbar
     local healthbar = frame.custom.healthbar
 
     frame.custom.frame:SetScript('OnUpdate', function() -- stupid design double setscrpt, but idk for now, will rewrite anyways
         local currentGuid = frame:GetName(1)
+        -- Collision sizing must run before the facsimile-name early return.
+        -- Otherwise a frame that was shrunk to 1x1 by overlap mode can never
+        -- regain its real footprint for Blizzard's nameplate stacking.
+        plates:ApplyOverlapState(frame)
         local facadeMode = plates.namesFacade and plates.namesFacade:GetMode(currentGuid)
         if facadeMode then
             plates.namesFacade:ApplyCustom(frame, facadeMode, currentGuid)
@@ -910,20 +931,9 @@ function plates:SetupOnUpdate(frame) -- v1
         -- blizzard fades non-targeted nameplates by setting alpha on parent frame
         frame.custom.frame:SetAlpha(frame:GetAlpha())
 
-        -- overlap feature: shrink blizzard frame to 1x1, clicks go to custom overlay
+        -- overlap feature: the Blizzard collision frame is sized above before
+        -- any facsimile-name path can return; clicks still use our overlay.
         local clickFrame = plates.overlapEnabled and frame.custom.frame or frame
-        local currentWidth = frame:GetWidth()
-        if plates.overlapEnabled then
-            if currentWidth > 1 and currentWidth ~= frame.custom.lastWidth then
-                frame:SetSize(1, 1)
-                frame.custom.lastWidth = 1
-            end
-        else
-            if currentWidth ~= frame.custom.lastWidth then
-                frame:SetSize(frame.custom.frame:GetWidth(), frame.custom.frame:GetHeight())
-                frame.custom.lastWidth = currentWidth
-            end
-        end
 
         -- allows clicks
         local enableMouse = not plates.clickThrough
