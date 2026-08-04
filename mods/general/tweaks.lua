@@ -1,5 +1,10 @@
 DRAGONFLIGHT()
 
+local namesFonts = {'Default'}
+for i = 1, table.getn(media.fonts) do
+    table.insert(namesFonts, media.fonts[i])
+end
+
 DF:NewDefaults('tweaks', {
     enabled = {value = true},
     version = {value = '1.1'},
@@ -14,6 +19,8 @@ DF:NewDefaults('tweaks', {
     namesHostilePlayers = {value = false, metadata = {element = 'checkbox', category = 'Names', indexInCategory = 3, description = 'Hostile players'}},
     namesNonHostilePlayers = {value = false, metadata = {element = 'checkbox', category = 'Names', indexInCategory = 4, description = 'Non-hostile players'}},
     namesNpcs = {value = false, metadata = {element = 'checkbox', category = 'Names', indexInCategory = 5, description = 'NPCs'}},
+    namesTextFont = {value = 'Default', metadata = {element = 'dropdown', category = 'Names', indexInCategory = 6, description = 'Name text font', options = namesFonts}},
+    namesTextScale = {value = 100, metadata = {element = 'slider', category = 'Names', indexInCategory = 7, description = 'Name text size (%)', min = 50, max = 200, stepSize = 5}},
     namesOriginalUnitNameNPC = {value = false},
     namesOriginalUnitNamePlayer = {value = false},
 
@@ -123,6 +130,20 @@ DF:NewModule('tweaks', 1, function()
 
     callbacks.namesNpcs = function(value)
         SetNamesOption('npcs', value)
+    end
+
+    callbacks.namesTextFont = function(value)
+        local plates = DF.setups.plates
+        if plates and plates.namesFacade then
+            plates.namesFacade:SetTextFont(value)
+        end
+    end
+
+    callbacks.namesTextScale = function(value)
+        local plates = DF.setups.plates
+        if plates and plates.namesFacade then
+            plates.namesFacade:SetTextScale(value)
+        end
     end
 
     DF:NewCallbacks('tweaks', callbacks)

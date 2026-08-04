@@ -28,6 +28,8 @@ local namesFacade = {
     nativeSuppressed = {},
     enemyInjected = false,
     friendInjected = false,
+    textFont = 'Default',
+    textScale = 100,
     lastChildCount = 0,
     elapsed = 0,
     engineElapsed = 0
@@ -195,7 +197,11 @@ function namesFacade:EnsureFrame(frame)
     if originalName and originalName.GetFont then
         font, size, flags = originalName:GetFont()
     end
-    nameText:SetFont(font or 'Fonts\\FRIZQT__.TTF', size or 12, flags or 'OUTLINE')
+    local originalFont = font or 'Fonts\\FRIZQT__.TTF'
+    local originalSize = size or 12
+    local fontFlags = flags or 'OUTLINE'
+    local selectedFont = self.textFont ~= 'Default' and (media[self.textFont] or self.textFont) or originalFont
+    nameText:SetFont(selectedFont, originalSize * (self.textScale or 100) / 100, fontFlags)
     nameText:SetJustifyH('CENTER')
     holder:Hide()
 
@@ -219,7 +225,10 @@ function namesFacade:EnsureFrame(frame)
         nameText = nameText,
         objects = objects,
         originalHidden = false,
-        mouseEnabled = mouseEnabled
+        mouseEnabled = mouseEnabled,
+        originalFont = originalFont,
+        originalSize = originalSize,
+        fontFlags = fontFlags
     }
     self.registry[frame] = entry
     return entry
@@ -322,6 +331,31 @@ function namesFacade:SetOption(option, value)
     end
     self:UpdateNativeNames()
     self:UpdateEnginePlates()
+end
+
+function namesFacade:ApplyTextStyle(entry)
+    local font = entry.originalFont
+    if self.textFont and self.textFont ~= 'Default' then
+        font = media[self.textFont] or self.textFont
+    end
+    local size = entry.originalSize * (self.textScale or 100) / 100
+    entry.nameText:SetFont(font, size, entry.fontFlags)
+end
+
+function namesFacade:RefreshTextStyle()
+    for _, entry in pairs(self.registry) do
+        self:ApplyTextStyle(entry)
+    end
+end
+
+function namesFacade:SetTextFont(value)
+    self.textFont = value or 'Default'
+    self:RefreshTextStyle()
+end
+
+function namesFacade:SetTextScale(value)
+    self.textScale = value or 100
+    self:RefreshTextStyle()
 end
 
 function namesFacade:Initialize()
