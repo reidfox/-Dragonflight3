@@ -16,7 +16,7 @@ DF:NewDefaults('collector', {
 })
 
 DF:NewModule('collector', 1, 'PLAYER_ENTERING_WORLD', function()
-    local buttonsFound = DF.lib.CreateButtonSkinner()
+    local buttonsFound = {}
 
     local collectorFrame
     local expandButton = DF.ui.ExpandButton(UIParent, 28, 17, nil, function(isChecked)
@@ -83,6 +83,10 @@ DF:NewModule('collector', 1, 'PLAYER_ENTERING_WORLD', function()
             table.insert(buttonList, btn)
         end
 
+        table.sort(buttonList, function(a, b)
+            return (a:GetName() or tostring(a)) < (b:GetName() or tostring(b))
+        end)
+
         local buttonCount = table.getn(buttonList)
 
         if DF.profile['collector']['autoHide'] then
@@ -109,13 +113,15 @@ DF:NewModule('collector', 1, 'PLAYER_ENTERING_WORLD', function()
             local btn = buttonList[i]
             local row = math.floor((i - 1) / buttonsPerRow)
             local col = math.mod(i - 1, buttonsPerRow)
-            local xOffset = padding + (col * (cellSize + spacing))
-            local yOffset = -padding - (row * (cellSize + spacing))
+            local xOffset = padding + (col * (scaledCellSize + spacing))
+            local yOffset = -padding - (row * (scaledCellSize + spacing))
 
             btn:SetParent(collectorFrame)
             btn:ClearAllPoints()
             btn:SetPoint('TOPLEFT', collectorFrame, 'TOPLEFT', xOffset, yOffset)
             btn:SetScale(buttonScale)
+            btn:SetFrameStrata(collectorFrame:GetFrameStrata())
+            btn:SetFrameLevel(collectorFrame:GetFrameLevel() + 1)
 
             btn:SetMovable(false)
             btn:RegisterForDrag()
@@ -134,6 +140,12 @@ DF:NewModule('collector', 1, 'PLAYER_ENTERING_WORLD', function()
         end
     end
 
+    -- Addons using FuBar-style minimap plugins often create their buttons well
+    -- after PLAYER_ENTERING_WORLD. Keep this table live and relayout whenever
+    -- the skinner discovers one instead of taking a one-time startup snapshot.
+    buttonsFound = DF.lib.CreateButtonSkinner(function(buttons)
+        LayoutButtons(buttons)
+    end)
     DF.timers.delay(.1, function() LayoutButtons(buttonsFound) end)
 
     -- callbacks

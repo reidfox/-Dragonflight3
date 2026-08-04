@@ -21,6 +21,7 @@ DF:NewDefaults('tweaks', {
     namesNpcs = {value = false, metadata = {element = 'checkbox', category = 'Names', indexInCategory = 5, description = 'NPCs'}},
     namesTextFont = {value = 'Default', metadata = {element = 'dropdown', category = 'Names', indexInCategory = 6, description = 'Name text font', options = namesFonts}},
     namesTextScale = {value = 100, metadata = {element = 'slider', category = 'Names', indexInCategory = 7, description = 'Name text size (%)', min = 50, max = 200, stepSize = 5}},
+    namesClassColors = {value = false, metadata = {element = 'checkbox', category = 'Names', indexInCategory = 8, description = 'Class colors for player names'}},
     namesOriginalUnitNameNPC = {value = false},
     namesOriginalUnitNamePlayer = {value = false},
     namesOriginalUnitNameRenderMode = {value = false},
@@ -144,6 +145,13 @@ DF:NewModule('tweaks', 1, function()
         local plates = DF.setups.plates
         if plates and plates.namesFacade then
             plates.namesFacade:SetTextScale(value)
+        end
+    end
+
+    callbacks.namesClassColors = function(value)
+        local plates = DF.setups.plates
+        if plates and plates.namesFacade then
+            plates.namesFacade:SetClassColors(value)
         end
     end
 

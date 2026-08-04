@@ -30,6 +30,7 @@ local namesFacade = {
     friendInjected = false,
     textFont = 'Default',
     textScale = 100,
+    classColors = false,
     lastChildCount = 0,
     elapsed = 0,
     engineElapsed = 0
@@ -251,6 +252,14 @@ end
 
 function namesFacade:UpdateText(entry, guid)
     entry.nameText:SetText(UnitName(guid) or '')
+    if self.classColors and UnitIsPlayer(guid) then
+        local _, class = UnitClass(guid)
+        local color = class and DF.tables['classcolors'][class]
+        if color then
+            entry.nameText:SetTextColor(color[1], color[2], color[3])
+            return
+        end
+    end
     local r, g, b = GameTooltip_UnitColor(guid)
     entry.nameText:SetTextColor(r or 1, g or 1, b or 1)
 end
@@ -371,6 +380,16 @@ end
 function namesFacade:SetTextScale(value)
     self.textScale = value or 100
     self:RefreshTextStyle()
+end
+
+function namesFacade:SetClassColors(value)
+    self.classColors = value and true or false
+    for frame, entry in pairs(self.registry) do
+        local guid = frame:GetName(1)
+        if guid then
+            self:UpdateText(entry, guid)
+        end
+    end
 end
 
 function namesFacade:Initialize()
