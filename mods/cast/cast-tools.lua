@@ -46,7 +46,9 @@ function DF.lib.CreateCastBar(unit)
         channelPushbackOffset = 0,
         lastRawStartTime = nil,
         lastRawEndTime = nil,
-        activeMode = nil
+        activeMode = nil,
+        suppressFishing = false,
+        suppressedFishingStart = nil
     }
 
     function cast:CreateCastFrame()
@@ -377,7 +379,7 @@ function DF.lib.CreateCastBar(unit)
         self.state.activeMode = mode
     end
 
-    function cast:ClearCastState()
+    function cast:ClearCastState(keepFishingSuppression)
         self.frame:SetAlpha(0)
         self.state.fadeOut = false
         self.state.lastCast = nil
@@ -390,6 +392,10 @@ function DF.lib.CreateCastBar(unit)
         self.state.lastRawStartTime = nil
         self.state.lastRawEndTime = nil
         self.state.activeMode = nil
+        if not keepFishingSuppression then
+            self.state.suppressFishing = false
+            self.state.suppressedFishingStart = nil
+        end
         self.bar:SetWidth(0.1)
         self.spark:Hide()
         if self.spark2 then self.spark2:Hide() end
@@ -405,6 +411,26 @@ function DF.lib.CreateCastBar(unit)
                 self.sparkTrails[i]:Hide()
             end
         end
+    end
+
+    function cast:IsFishingName(name)
+        if not name then return false end
+        local fishingName = FISHING or PROFESSIONS_FISHING or 'Fishing'
+        return string.find(string.lower(name), string.lower(fishingName), 1, true) and true or false
+    end
+
+    function cast:SuppressFishingCast()
+        if self.unit ~= 'player' then return false end
+
+        local castName, _, _, _, castStart = UnitCastingInfo(self.unit)
+        local channelName, _, _, _, channelStart = UnitChannelInfo(self.unit)
+        local activeName = channelName or castName or self.state.lastCast
+        if not self:IsFishingName(activeName) then return false end
+
+        self.state.suppressFishing = true
+        self.state.suppressedFishingStart = channelStart or castStart or self.state.lastRawStartTime
+        self:ClearCastState(true)
+        return true
     end
 
     function cast:ApplyDelay(disruption)
@@ -454,6 +480,19 @@ function DF.lib.CreateCastBar(unit)
     function cast:UpdateFrame(elapsed)
         local castName, rank, text, icon, startTime, endTime = UnitCastingInfo(self.unit)
         local channelName, channelRank, channelText, channelIcon, channelStart, channelEnd = UnitChannelInfo(self.unit)
+
+        if self.state.suppressFishing then
+            local activeName = channelName or castName
+            local activeStart = channelName and channelStart or startTime
+            local sameFishingCast = self:IsFishingName(activeName) and
+                (not self.state.suppressedFishingStart or activeStart == self.state.suppressedFishingStart)
+            if sameFishingCast then
+                self.frame:SetAlpha(0)
+                return
+            end
+            self.state.suppressFishing = false
+            self.state.suppressedFishingStart = nil
+        end
 
         if castName then
             self.state.interrupted = false
@@ -618,15 +657,14 @@ function DF.lib.CreateCastBar(unit)
     if cast.unit == 'player' then
         castEventFrame:RegisterEvent('SPELLCAST_DELAYED')
         castEventFrame:RegisterEvent('LOOT_OPENED')
+        castEventFrame:RegisterEvent('LOOT_CLOSED')
     end
     castEventFrame:SetScript('OnEvent', function()
         if event == 'SPELLCAST_DELAYED' then
             cast:ApplyDelay(arg1)
             return
-        elseif event == 'LOOT_OPENED' then
-            if cast.state.lastCast and string.find(cast.state.lastCast, 'Fishing') then
-                cast:ClearCastState()
-            end
+        elseif event == 'LOOT_OPENED' or event == 'LOOT_CLOSED' then
+            cast:SuppressFishingCast()
             return
         end
 

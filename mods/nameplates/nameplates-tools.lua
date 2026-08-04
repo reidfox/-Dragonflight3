@@ -81,13 +81,12 @@ end
 
 function namesFacade:UpdateNativeNames()
     local active = self:HasAnyNames()
-    -- Native names cannot filter by reaction and Turtle does not reliably
-    -- refresh UnitNameRenderMode at login. Keep them suppressed and let the
-    -- facsimile handle both persistent and target-only names.
-    self:SetNativeNames('UnitNameNPC', 'namesOriginalUnitNameNPC', '0', active)
-    self:SetNativeNames('UnitNamePlayer', 'namesOriginalUnitNamePlayer', '0', active)
-    -- Restore the render mode saved by the previous implementation, if any.
-    self:SetNativeNames('UnitNameRenderMode', 'namesOriginalUnitNameRenderMode', nil, false)
+    -- Leave the Display > Names checkboxes alone so their CVars save normally.
+    -- Restore values remembered by older facsimile versions, then suppress the
+    -- native renderer as a whole while our filtered names are active.
+    self:SetNativeNames('UnitNameNPC', 'namesOriginalUnitNameNPC', nil, false)
+    self:SetNativeNames('UnitNamePlayer', 'namesOriginalUnitNamePlayer', nil, false)
+    self:SetNativeNames('UnitNameRenderMode', 'namesOriginalUnitNameRenderMode', '0', active)
 end
 
 function namesFacade:UpdateEnginePlates()
