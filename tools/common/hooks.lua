@@ -41,13 +41,14 @@ function DF.hooks.HookSecureFunc(tbl, name, func, runBefore)
     DF.hooks.registry[tbl] = DF.hooks.registry[tbl] or {}
     DF.hooks.registry[tbl][name] = orig
 
-    tbl[name] = function(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10)
+    tbl[name] = function(...)
+        local callArgs = arg
         if runBefore then
-            func(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10)
+            func(unpack(callArgs, 1, callArgs.n))
         end
-        local ret1, ret2, ret3, ret4, ret5 = orig(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10)
+        local ret1, ret2, ret3, ret4, ret5 = orig(unpack(callArgs, 1, callArgs.n))
         if not runBefore then
-            func(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10)
+            func(unpack(callArgs, 1, callArgs.n))
         end
         return ret1, ret2, ret3, ret4, ret5
     end
@@ -72,6 +73,10 @@ end
 -- runAfter (boolean) - if true, runs after original; if false/nil, runs before original
 -- returns: nothing
 function DF.hooks.HookScript(frame, script, handler, runAfter)
+    if not frame or not frame.GetScript or not frame.SetScript then
+        return false
+    end
+
     local orig = frame:GetScript(script)
 
     DF.hooks.registry[frame] = DF.hooks.registry[frame] or {}
@@ -86,6 +91,7 @@ function DF.hooks.HookScript(frame, script, handler, runAfter)
             handler(arg1, arg2, arg3, arg4, arg5)
         end
     end)
+    return true
 end
 
 -- IsHooked: check if function or script is currently hooked

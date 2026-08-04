@@ -70,9 +70,12 @@ DF:NewModule('map', 1, 'PLAYER_ENTERING_WORLD',function()
         WorldMapFrame:StopMovingOrSizing()
     end)
 
-    DF.hooks.HookScript(BlackoutWorld, 'OnShow', function()
-        BlackoutWorld:Hide()
-    end, true)
+    -- BlackoutWorld is a texture on Turtle WoW, not a frame, so it cannot
+    -- have an OnShow script. World map updates can reveal it again; hide it
+    -- after those updates instead.
+    DF.hooks.HookSecureFunc('WorldMapFrame_Update', function()
+        if BlackoutWorld then BlackoutWorld:Hide() end
+    end)
 
     WorldMapZoneDropDown:ClearAllPoints()
     WorldMapZoneDropDown:SetPoint('LEFT', WorldMapContinentDropDown, 'RIGHT', 20, 0)

@@ -67,10 +67,13 @@ DF:NewModule('error', 1, function()
     end
 
     callbacks.hideuierrors = function(value)
+        -- UIErrorsFrame also displays yellow UI_INFO_MESSAGE events such as
+        -- quest objective progress. Suppress only red UI_ERROR_MESSAGE events.
+        UIErrorsFrame:Show()
         if value then
-            UIErrorsFrame:Hide()
+            UIErrorsFrame:UnregisterEvent('UI_ERROR_MESSAGE')
         else
-            UIErrorsFrame:Show()
+            UIErrorsFrame:RegisterEvent('UI_ERROR_MESSAGE')
             uiErrorFrame:UnregisterEvent('UI_ERROR_MESSAGE')
         end
     end

@@ -26,6 +26,11 @@ DF:NewDefaults('bagbar', {
 })
 
 DF:NewModule('bagbar', 1, 'PLAYER_LOGIN', function()
+    -- Let Guda keep the stock bag buttons and its own open/close handlers.
+    if IsAddOnLoaded('Guda') or IsAddOnLoaded('guda') or getglobal('Guda') then
+        return
+    end
+
     local setup = DF.setups.bagbar
     setup:CreateBagBar()
     setup:OnEvent()

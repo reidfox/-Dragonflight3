@@ -42,6 +42,12 @@ defaults.frameColour = {value = {1, 1, 1, 1}, metadata = {element = 'colorpicker
 DF:NewDefaults('bags', defaults)
 
 DF:NewModule('bags', 1, 'PLAYER_AFTER_ENTERING_WORLD', function()
+    -- Guda owns the bag frames, bag functions, sorting, and quest-item bar.
+    -- Leave all of those untouched when it is active.
+    if IsAddOnLoaded('Guda') or IsAddOnLoaded('guda') or getglobal('Guda') then
+        return
+    end
+
     local setup = DF.setups.bags
     if DF.profile['bags']['showSortButton'] == nil then
         DF.profile['bags']['showSortButton'] = true
