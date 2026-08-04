@@ -370,6 +370,15 @@ function DF.lib.CreateButtonSkinner(onChanged)
         local buttons = {}
         local visited = {}
 
+        local function AddButton(button)
+            if button and not visited[button] then
+                visited[button] = true
+                if IsButton(button, false) then
+                    table.insert(buttons, button)
+                end
+            end
+        end
+
         local function ScanChildren(parent, depth)
             if not parent or depth > 4 then return end
             for _, child in ipairs({parent:GetChildren()}) do
@@ -392,9 +401,17 @@ function DF.lib.CreateButtonSkinner(onChanged)
         -- the minimap (used by some ImprovedErrorFrame-era addons).
         for _, child in ipairs({UIParent:GetChildren()}) do
             if not visited[child] and IsButton(child, true) then
+                visited[child] = true
                 table.insert(buttons, child)
             end
         end
+
+        -- These FuBar plugins expose the real minimap frame directly. This
+        -- avoids relying on load order or on which embedded FuBarPlugin copy
+        -- won library activation. IEF is hidden until it actually has an error.
+        AddButton(NampowerOptions and NampowerOptions.minimapFrame)
+        AddButton(SuperAPIOptions and SuperAPIOptions.minimapFrame)
+        AddButton(IEFMinimapButton)
 
         return buttons
     end
@@ -436,8 +453,10 @@ function DF.lib.CreateButtonSkinner(onChanged)
                 changed = true
             end
         end
-        if changed and onChanged then
-            onChanged(skinned)
+        if onChanged then
+            -- Also refresh unchanged buttons. Some addons set their minimap
+            -- point after our first scan, and the collector must reclaim it.
+            onChanged(skinned, changed)
         end
     end
 

@@ -35,7 +35,18 @@ DF:NewModule('error', 1, function()
         end
     end)
 
+    local function ForwardToImprovedErrorFrame(msg)
+        if ImprovedErrorFrame and type(ImprovedErrorFrame.newErrorMessage) == 'function' then
+            -- IEF predates seterrorhandler and replaces _ERRORMESSAGE instead.
+            -- DF3's handler otherwise bypasses it completely, so its minimap
+            -- notification button never receives an error to display.
+            return pcall(ImprovedErrorFrame.newErrorMessage, msg)
+        end
+        return false
+    end
+
     local function customHandler(msg)
+        if ForwardToImprovedErrorFrame(msg) then return end
         errorCache[msg] = (errorCache[msg] or 0) + 1
         local _, _, source = string.find(msg, '([^:]+%.lua:%d+)')
         source = source or 'unknown source'
